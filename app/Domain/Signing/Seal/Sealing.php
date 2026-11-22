@@ -1,0 +1,67 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domain\Signing\Seal;
+
+use App\Domain\Signing\Pdf\PdfEngine;
+use App\Domain\Signing\Pdf\TimestampServers;
+use App\Support\Instance\InstanceSettings;
+
+/**
+ * Whether finished documents are sealed on this installation (ADR-046
+ * amendment, gap 5, package S10), and with what.
+ *
+ * Sealing is off until an administrator switches it on in /hq (the instance
+ * setting signing.seal_enabled, off by default everywhere): the owner decided
+ * on 2026-11-18 that the seal, long-term validation and the Verify page are
+ * not switched on in the hosted service until the legal question of
+ * eIDAS trust services is answered (gap 5, "Legal items"). A self-hoster
+ * switches it on after installing the PDF engine. It also needs the engine
+ * and a seal certificate (the company's own, else the instance's).
+ *
+ * TODO(legal-verify): whether sealing customers' documents makes the operator
+ * a (non-qualified) trust service provider under eIDAS art. 3(16) with the
+ * duties of art. 19 and supervision by PTS; until answered the hosted service
+ * keeps the switch off (ADR-046 gap 5, "Legal items").
+ */
+final class Sealing
+{
+    /** The longest the queue waits for a timestamp server before sealing without one (gap 5: 24 hours). */
+    public const int MAX_RETRY_HOURS = 24;
+
+    public static function switchedOn(): bool
+    {
+        return InstanceSettings::current()->signingSealEnabled();
+    }
+
+    /**
+     * What a completed envelope of the company is sealed with now, or null when it is not sealed (switched
+     * off, no engine, no usable certificate). Must run inside the company.
+     */
+    public static function credentialsFor(int $companyId): ?SealCredentials
+    {
+        if (! self::switchedOn() || ! app(PdfEngine::class)->isInstalled()) {
+            return null;
+        }
+
+        return SealCertificates::forCompany($companyId);
+    }
+
+    /** @return list<string> the configured RFC 3161 servers, in order */
+    public static function timestampUrls(): array
+    {
+        return array_slice(TimestampServers::configured(), 0, 5);
+    }
+
+    public static function timestampTimeout(): int
+    {
+        return max(1, min(60, (int) config('nonox.signing.timestamp.timeout', 10)));
+    }
+
+    /** Hours the queue keeps trying a timestamp server before sealing without a timestamp (0–24). */
+    public static function retryHours(): int
+    {
+        return max(0, min(self::MAX_RETRY_HOURS, (int) config('nonox.signing.seal.retry_hours', self::MAX_RETRY_HOURS)));
+    }
+}

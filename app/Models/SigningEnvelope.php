@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Domain\Signing\EnvelopeStatus;
+use App\Domain\Signing\Pdf\SealLevel;
+use App\Domain\Signing\Seal\SealStatus;
 use App\Support\Tenancy\BelongsToCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -57,6 +59,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?string $retention_hold_reason SKATTEREVISION, TVIST or ANNAT
  * @property ?CarbonImmutable $retention_hold_at
  * @property ?int $retention_hold_by
+ * @property ?SealStatus $seal_status PENDING while the queue seals it, then SEALED or FAILED (ADR-046 S10); null when never sealed
+ * @property ?SealLevel $seal_level the PAdES level reached, never a higher one
+ * @property ?string $sealed_path the sealed file (also a SEALED row in signing_document_versions)
+ * @property ?string $sealed_sha256
+ * @property ?string $seal_certificate_fingerprint SHA-256 of the seal certificate (DER)
+ * @property ?int $seal_certificate_id the company's own certificate, null for the instance seal
+ * @property ?CarbonImmutable $sealed_at
+ * @property ?CarbonImmutable $last_timestamp_at the newest timestamp in the file (S10 signature timestamp; S11 document timestamps)
+ * @property ?string $seal_failure why it could not be sealed (a PdfEngineFailure value or NO_CERTIFICATE, NOT_INSTALLED, JOB_FAILED)
  * @property ?CarbonImmutable $created_at
  * @property ?CarbonImmutable $updated_at
  */
@@ -115,6 +126,11 @@ class SigningEnvelope extends Model
             'retention_until' => 'immutable_date',
             'retention_hold' => 'boolean',
             'retention_hold_at' => 'immutable_datetime',
+            'seal_status' => SealStatus::class,
+            'seal_level' => SealLevel::class,
+            'seal_certificate_id' => 'integer',
+            'sealed_at' => 'immutable_datetime',
+            'last_timestamp_at' => 'immutable_datetime',
             'reminder_interval_days' => 'integer',
             'expired_at' => 'immutable_datetime',
             'next_sequence' => 'integer',

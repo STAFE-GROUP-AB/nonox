@@ -104,6 +104,7 @@ use App\Models\SigningField;
 use App\Models\SigningFieldValue;
 use App\Models\SigningLinkToken;
 use App\Models\SigningRequest as CrmSigningRequest;
+use App\Models\SigningSealCertificate;
 use App\Models\SigningVerificationCode;
 use App\Models\SkatteverketEvent;
 use App\Models\Supplier;
@@ -698,6 +699,8 @@ const COMPANY_SCOPED_MODELS = [
     // Templates with roles (ADR-046 S14); the tenancy test of its own is tests/Tenancy/SigningTemplatesTenancyTest.php.
     SigningTemplate::class => ['name' => 'Hemlig mall', 'document_type' => 'QUOTE'],
     SigningTemplateRole::class => 's14SigningTemplateRoleAttributes',
+    // Seal certificates (ADR-046 S10); the tenancy test of its own is tests/Tenancy/SigningSealTenancyTest.php.
+    SigningSealCertificate::class => 's10SigningSealCertificateAttributes',
     // Bulk send (ADR-046 S15); the tenancy test of its own is tests/Tenancy/SigningBulkSendTenancyTest.php.
     SigningBulkSend::class => ['status' => 'PREVIEW'],
     SigningBulkSendRow::class => 's15SigningBulkSendRowAttributes',
@@ -2252,6 +2255,11 @@ function s6SigningFieldAttributes(): array
     $signer = CrmSigningRequest::create([...crmSigningRequestAttributes(), 'envelope_id' => $envelope->id]);
 
     return ['envelope_id' => $envelope->id, 'signing_request_id' => $signer->id, 'type' => 'TEXT', 'page' => 1, 'x' => 1000, 'y' => 1000, 'width' => 10000, 'height' => 2000, 'page_width' => 59528, 'page_height' => 84189, 'label' => 'Hemligt fält', 'position' => 1];
+}
+
+function s10SigningSealCertificateAttributes(): array
+{
+    return ['subject' => 'CN=Hemligt sigill', 'issuer' => 'CN=Hemligt sigill', 'serial' => '01', 'not_before' => now()->subDay(), 'not_after' => now()->addYear(), 'fingerprint_sha256' => str_repeat('a', 64), 'self_signed' => true, 'pkcs12' => base64_encode('p12'), 'password' => 'hemligt'];
 }
 
 function s15SigningBulkSendRowAttributes(): array

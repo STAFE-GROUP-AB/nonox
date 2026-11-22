@@ -57,8 +57,24 @@
         @endforeach
     </table>
 
-    <div class="box">
-        <span class="muted">{!! App\Domain\Signing\SigningPdfs::bilingualBlock('En sammanställning för den som får en kopia. Varje underskrift är en enkel elektronisk underskrift, och PDF:en är oförändrad: räkna fram dess SHA-256 och jämför med kontrollsumman ovan för att se att det är samma dokument. Det fullständiga signeringsbeviset för varje underskrift finns hos avsändaren.') !!}</span>
-    </div>
+    @if(! empty($seal))
+        <h2>{{ $b('Försegling') }}</h2>
+        <table class="meta">
+            <tr><td class="muted" style="width: 38%">{{ $b('Förseglad av') }}</td><td>{{ $seal['name'] }}</td></tr>
+            <tr><td class="muted">{{ $b('Utfärdare') }}</td><td>{{ $seal['selfSigned'] ? $b('Självsignerat certifikat') : $seal['issuer'] }}</td></tr>
+            <tr><td class="muted">{{ $b('Certifikatets fingeravtryck (SHA-256)') }}</td><td class="mono">{{ $seal['fingerprint'] }}</td></tr>
+        </table>
+
+        <div class="box">
+            <span class="muted">{!! App\Domain\Signing\SigningPdfs::bilingualBlock('Den här sidan lades till efter att alla hade signerat, och sedan förseglades hela filen med en elektronisk stämpel (PAdES). Stämpeln visar att filen inte har ändrats sedan den förseglades och vem som förseglade den. Den är inte undertecknarnas underskrift: varje underskrift är en enkel elektronisk underskrift. Dokumentet som signerades finns oförändrat som den första versionen i filen, och kontrollsumman ovan gäller den versionen. Förseglingens nivå och en eventuell tidsstämpel visas i PDF-läsarens panel för underskrifter. Det fullständiga signeringsbeviset för varje underskrift finns hos avsändaren.') !!}</span>
+            @if($seal['selfSigned'])
+                <span class="muted">{!! App\Domain\Signing\SigningPdfs::bilingualBlock('Stämpelns certifikat är självsignerat. PDF-läsare visar därför stämpeln som en underskrift med okänd giltighet; det betyder inte att filen har ändrats.') !!}</span>
+            @endif
+        </div>
+    @else
+        <div class="box">
+            <span class="muted">{!! App\Domain\Signing\SigningPdfs::bilingualBlock('En sammanställning för den som får en kopia. Varje underskrift är en enkel elektronisk underskrift, och PDF:en är oförändrad: räkna fram dess SHA-256 och jämför med kontrollsumman ovan för att se att det är samma dokument. Det fullständiga signeringsbeviset för varje underskrift finns hos avsändaren.') !!}</span>
+        </div>
+    @endif
 </body>
 </html>

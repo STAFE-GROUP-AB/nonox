@@ -55,6 +55,12 @@ class SigningFollowUp
     /** Skipped: the quote was changed between the signature and the follow-up. */
     public const string CHANGED_AFTER_SIGNING = 'CHANGED_AFTER_SIGNING';
 
+    /** afterSeal(): the seal was given up (ADR-046 S10). */
+    public const string SEAL_FAILED = 'SEAL_FAILED';
+
+    /** afterSeal(): sealed, but without the timestamp that was asked for. */
+    public const string SEALED_WITHOUT_TIMESTAMP = 'SEALED_WITHOUT_TIMESTAMP';
+
     public function __construct(
         private readonly ProgressSalesDocument $progress,
         private readonly SigningHooks $hooks,
@@ -112,8 +118,11 @@ class SigningFollowUp
                 default => __(':title är signerad, men allt kunde inte göras automatiskt. Öppna offerten och gör order eller faktura för hand.', ['title' => $title]),
             });
 
-            // The signer's copy went from SignAtLink when the signature was saved; the company's goes here.
-            $this->mailCompanyCopy($company, $request, $several ? $envelope : null);
+            // The signer's copy went from SignAtLink when the signature was saved; the company's goes here, unless the
+            // envelope is being sealed (ADR-046 S10): then every completion mail goes once from afterSeal().
+            if (! $envelope instanceof SigningEnvelope || $envelope->seal_status === null) {
+                $this->mailCompanyCopy($company, $request, $several ? $envelope : null);
+            }
         });
     }
 
@@ -135,14 +144,56 @@ class SigningFollowUp
     }
 
     /**
-     * The signer's copy: the signed PDF and the certificate, queued after
-     * the signature commits, whatever happens to the order.
+     * The completion mails of an envelope whose seal has ended, sealed or
+     * failed (ADR-046 S10): the copies, the single signer's own copy and the
+     * company's copy, which waited for the seal, now with the sealed file
+     * when there is one; and a notice to the sender when the seal failed or
+     * came without its timestamp. Must run inside the company, in the
+     * transaction that moved the seal status (so it happens once).
      */
-    public static function mailSignerCopy(SigningRequest $request): void
+    public function afterSeal(SigningEnvelope $envelope, ?string $notice = null): void
+    {
+        $company = Company::query()->findOrFail($envelope->company_id);
+        $last = SigningRequest::query()->where('envelope_id', $envelope->id)->where('status', SigningStatus::Signed->value)->orderByDesc('signed_at')->orderByDesc('id')->first();
+
+        if (! $last instanceof SigningRequest) {
+            return;
+        }
+
+        $several = SigningEnvelopes::hasSeveralSigners($envelope->id);
+
+        self::mailEnvelopeCopies($envelope, toSigners: $several, afterSeal: true);
+
+        if (! $several) {
+            self::mailSignerCopy($last, afterSeal: true);
+        }
+
+        $this->mailCompanyCopy($company, $last, $several ? $envelope : null);
+
+        $title = SigningPdfs::title($last);
+
+        match ($notice) {
+            self::SEAL_FAILED => $this->notify($company, $last, __(':title är signerat, men dokumentet kunde inte förseglas. Kopiorna skickades utan försegling. Under Signering ser du varför.', ['title' => $title])),
+            self::SEALED_WITHOUT_TIMESTAMP => $this->notify($company, $last, __(':title är signerat och förseglat, men utan tidsstämpel: ingen tidsstämpelserver svarade i tid.', ['title' => $title])),
+            default => null,
+        };
+    }
+
+    /**
+     * The signer's copy: the signed PDF and the certificate, queued after
+     * the signature commits, whatever happens to the order. A one-signer
+     * envelope that is being sealed (S10) gets it from afterSeal() instead,
+     * with the sealed file.
+     */
+    public static function mailSignerCopy(SigningRequest $request, bool $afterSeal = false): void
     {
         $company = Company::query()->find($request->company_id);
 
         if (! $company instanceof Company || $company->isTestCompany()) {
+            return;
+        }
+
+        if (! $afterSeal && self::waitsForSeal($request)) {
             return;
         }
 
@@ -157,6 +208,18 @@ class SigningFollowUp
         });
 
         Mail::to($request->email)->queue((new SignedDocumentMail($request->id, $company->id, true, $language, $token))->afterCommit());
+    }
+
+    /** Whether a signer's own copy waits for the seal: their envelope has one signer and is being sealed (S10). */
+    private static function waitsForSeal(SigningRequest $request): bool
+    {
+        if ($request->envelope_id === null) {
+            return false;
+        }
+
+        $sealing = CurrentCompany::run($request->company_id, fn (): mixed => SigningEnvelope::query()->whereKey($request->envelope_id)->value('seal_status'));
+
+        return $sealing !== null && ! SigningEnvelopes::hasSeveralSigners($request->envelope_id);
     }
 
     /** A recipient's language for their mails: sv or en, Swedish for anything else. */
@@ -174,11 +237,16 @@ class SigningFollowUp
      * the signature that triggers them is already saved. (The company's own
      * copy, with the full certificates, goes from the follow-up.)
      */
-    public static function mailEnvelopeCopies(SigningEnvelope $envelope, bool $toSigners = true): void
+    public static function mailEnvelopeCopies(SigningEnvelope $envelope, bool $toSigners = true, bool $afterSeal = false): void
     {
         $company = Company::query()->find($envelope->company_id);
 
         if (! $company instanceof Company || $company->isTestCompany()) {
+            return;
+        }
+
+        // Being sealed (ADR-046 S10): the copies go with the sealed file from afterSeal().
+        if (! $afterSeal && $envelope->seal_status !== null) {
             return;
         }
 

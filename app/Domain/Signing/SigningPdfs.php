@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Signing;
 
 use App\Domain\Signing\Pdf\PdfScripts;
+use App\Domain\Signing\Seal\SealCertificateInfo;
 use App\Models\Company;
 use App\Models\SigningEnvelope;
 use App\Models\SigningRequest;
@@ -67,6 +68,31 @@ final class SigningPdfs
             'company' => $company,
             'brand' => Brand::for($company),
             'title' => (string) $envelope->title,
+        ])->render());
+    }
+
+    /**
+     * The page appended to the finished file before it is sealed (ADR-046
+     * amendment, gap 5, package S10): the summary of the signing (never an
+     * address, IP address or browser, since the sealed file goes to every
+     * recipient) and what the seal is. It names no seal level: the level is
+     * known only after sealing, and the page must never state a higher one
+     * than reached; the PDF reader's signature panel and the envelope page
+     * show the level.
+     */
+    public static function sealAppendix(SigningEnvelope $envelope, SealCertificateInfo $seal, string $source): string
+    {
+        $company = Company::query()->findOrFail($envelope->company_id);
+        $signers = SigningRequest::query()->where('envelope_id', $envelope->id)->where('status', SigningStatus::Signed->value)->orderBy('step')->orderBy('signed_at')->orderBy('id')
+            ->get(['id', 'step', 'signer_name', 'signer_title', 'signed_at', 'signature_method', 'verification']);
+
+        return self::render(view('signing.summary', [
+            'envelope' => $envelope,
+            'signers' => $signers,
+            'company' => $company,
+            'brand' => Brand::for($company),
+            'title' => (string) $envelope->title,
+            'seal' => ['name' => $seal->commonName, 'issuer' => $seal->issuer, 'fingerprint' => $seal->fingerprintSha256, 'selfSigned' => $seal->selfSigned, 'source' => $source],
         ])->render());
     }
 

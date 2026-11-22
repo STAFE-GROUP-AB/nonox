@@ -18,8 +18,10 @@ use Illuminate\Support\Facades\Storage;
  * hand out the same files:
  *
  * - SIGNER: the finished version the signer was shown (with their own values
- *   when the document has fields) and their signing certificate.
- * - COPY: the finished version with every signer's values and the summary
+ *   when the document has fields) and their signing certificate; the sealed
+ *   file instead when the envelope has one signer and is sealed (S10).
+ * - COPY: the finished version with every signer's values (sealed, S10, when
+ *   the envelope is) and the summary
  *   of the signing (never another signer's full certificate).
  * - COMPANY: the finished version and every signer's full certificate.
  *
@@ -35,6 +37,15 @@ final class CompletionFiles
     public static function forSigner(SigningRequest $request): array
     {
         $document = SignerFields::shownVersion($request)->path ?? $request->document_path;
+        $envelope = $request->envelope_id === null ? null : SigningEnvelope::query()->find($request->envelope_id, ['id', 'sealed_path']);
+
+        // A sealed envelope with one signer (ADR-046 S10): the signer gets the sealed file, which is their version
+        // with the summary page and the seal added. With several signers each signer's own copy stays the version
+        // they were shown, and the sealed file goes to everyone in the envelope copies.
+        if ($envelope instanceof SigningEnvelope && $envelope->sealed_path !== null && ! SigningEnvelopes::hasSeveralSigners($envelope->id)) {
+            $document = $envelope->sealed_path;
+        }
+
         $files = [['name' => $request->document_name, 'path' => $document, 'make' => null]];
 
         if ($request->signed_document_path !== null) {

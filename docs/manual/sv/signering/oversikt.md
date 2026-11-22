@@ -45,4 +45,5 @@ Då kan inga nya dokument skickas, och öppna länkar för egna dokument slutar 
 - [Fält i dokumentet](/manual/signering/falt-i-dokumentet)
 - [Alla signeringar](/manual/signering/alla-signeringar)
 - [Bevarande och radering av signeringar](/manual/signering/bevarande-och-radering)
+- [Försegling av signerade dokument](/manual/signering/forsegling)
 - [Signera offerter och avtal](/manual/crm/signering)

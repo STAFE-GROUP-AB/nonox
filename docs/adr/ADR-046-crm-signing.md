@@ -2743,6 +2743,159 @@ unchanged.
 - **Screens.** `/signering/massutskick` (list and upload, `signing.bulk-sends`), `/signering/massutskick/{id}` (preview, progress with a 5-second poll, result list; `signing.bulk-send`). Another company's id answers 404. Page query counts do not grow with the number of rows (tested).
 - **Tests:** `tests/Feature/Signing/BulkSendTest.php`, `tests/Tenancy/SigningBulkSendTenancyTest.php`. Manual: `docs/manual/sv/signering/massutskick.md`.
 
+### S10 as built (2026-11-22): the PAdES seal
+
+- **Off until switched on (owner decision 2026-11-18).** The instance setting
+  `signing.seal_enabled` (`InstanceSettings::SIGNING_SEAL_ENABLED`, /hq →
+  Inställningar, "Försegling av signerade dokument") is `false` by default on
+  every installation. The hosted service keeps it off until the trust-service
+  item below is answered; a self-hoster switches it on after installing the
+  PDF engine. Sealing applies to an envelope only when it completes with the
+  switch on, the engine installed (`PdfEngine::isInstalled`) and a usable
+  certificate (`Sealing::credentialsFor`); otherwise the envelope has no seal
+  status and everything is exactly as before.
+- **Migration** `database/migrations/2027_03_26_100000_create_signing_seal_certificates.php`:
+  `signing_seal_certificates` as gap 5 specifies, plus `self_signed`,
+  `retired_by` and `expiry_task_id`; the PKCS#12 (base64) and its password use
+  Laravel's `encrypted` cast and are in `$hidden`. A partial unique index
+  allows one active certificate per company. The trigger
+  `signing_seal_certificates_protect` refuses every change except retiring
+  once, emptying the key and password (only to `NULL`) and setting the expiry
+  to-do once; a check ties "retired" to "no key". Grant `NoDelete` (rows go
+  with the company). On `signing_envelopes`: `seal_status` (`PENDING`,
+  `SEALED`, `FAILED`), `seal_level`, `sealed_path`, `sealed_sha256`,
+  `seal_certificate_fingerprint`, `seal_certificate_id`, `sealed_at`,
+  `last_timestamp_at` (for S11) and `seal_failure`; checks (a status only on a
+  completed envelope; `SEALED` exactly when the seal facts are set) and the
+  trigger `signing_envelopes_protect_seal` (the status only moves
+  `NULL → PENDING → SEALED | FAILED`, every fact set once,
+  `last_timestamp_at` only later). Adding the columns fires none of the
+  evidence triggers.
+- **At completion** (`SigningEnvelopes::signed`, the same update that sets
+  `COMPLETED`): `EnvelopeSealer::start` marks the envelope `PENDING` and
+  queues `SealSigningEnvelope` after commit (company id and envelope id,
+  `RunsForCompany`, `WithoutOverlapping` per envelope, bounded by time).
+- **The finished file** (`EnvelopeSealer::attempt`, outside a transaction):
+  the signed version (`SigningFields::signedVersion`: the last `AFTER_SIGNER`
+  version, else the PDF that was sent), checked against its stored SHA-256;
+  then `PdfEngine::appendPages` with the summary page
+  (`SigningPdfs::sealAppendix`, the S1 summary view with a "Försegling"
+  section) and `PdfEngine::seal` (field `NonoxSeal`, reason "Förseglad efter
+  signering / Sealed after signing"). The sealed file must start with the
+  signed version's bytes and its certificate fingerprint must be the one the
+  credentials carry, or it is refused. It is stored on the signing disk, a
+  `SEALED` row in `signing_document_versions` (so `signing:verify` checks it
+  like every version, `FILE_CHANGED` included), and the envelope's seal
+  columns are set under a row lock in one transaction with the audit entry.
+  **Deviation (data minimisation):** the appended page is the envelope
+  summary (names, titles, times, methods; no address, IP address or
+  browser), not every signer's full certificate, because the sealed file goes
+  to every copy recipient and S13 never gives a copy recipient another
+  signer's full certificate. The full certificates stay separate files as
+  before. The page names no level: it is rendered before the level is known,
+  and must never state a higher one; the reader's signature panel and the
+  envelope page ("Försegling" card) state the level reached.
+- **Levels:** B-T when `nonox.signing.timestamp.urls` has servers (with
+  `nonox.signing.timestamp.timeout`, default 10 s), else B-B. When no server
+  answers the job releases itself (1, 2, 4 … at most 60 minutes) and the
+  envelope shows "Förseglas"; after `nonox.signing.seal.retry_hours` (default
+  and at most 24) it seals at B-B, the audit entry says
+  `without_timestamp: true` and the sender gets a notice. Any other transient
+  engine failure is retried in the same window; a permanent one (bad
+  credentials, refused file, not installed, a changed file, the switch turned
+  off meanwhile, no certificate any more) gives the seal up at once:
+  `FAILED` with a code in `seal_failure`. `failed()` of the job gives it up
+  too, and the hourly `signing:seal-check` queues again any envelope still
+  `PENDING` 15 minutes after completion, so an envelope never hangs.
+- **The completion mails wait for the seal.** While an envelope has a seal
+  status, `SigningFollowUp::mailEnvelopeCopies`, the single signer's
+  `mailSignerCopy` and the follow-up's company copy are skipped; when the seal
+  ends (sealed or failed), `SigningFollowUp::afterSeal` sends them once, in
+  the transaction that moves the status, with the sealed file when there is
+  one (`SigningFields::finalVersion` now answers the sealed path first, and
+  `CompletionFiles::forSigner` gives a one-signer envelope's signer the sealed
+  file). With several signers each signer's own copy at their signature is
+  unchanged (the version they were shown); the sealed file reaches them in the
+  envelope copy. The order, deal and other follow-up steps do not wait.
+- **Certificates.** `SealCertificates::read` checks a PKCS#12 with
+  `openssl_pkcs12_read` (PHP manual, ext/openssl; OpenSSL 3.6 here): it
+  opens with the password, holds a certificate and its matching private key
+  (`openssl_x509_check_private_key`), RSA ≥ 2048 bits or EC ≥ 256, a key
+  usage (when present) with digital signature or non-repudiation, valid now;
+  at most 64 kB. An old file with RC2/3DES PKCS#12 encryption may not open
+  under OpenSSL 3 without its legacy provider; the message says to export it
+  again with AES. **Company certificate:** Inställningar för företaget →
+  Signering → "Försegling av signerade dokument" (`SigningSealSettings`,
+  `signing:settings`), upload of a `.p12`/`.pfx` with its password
+  (`ManageSealCertificates::upload`): the Livewire temporary file is deleted
+  and the password emptied right after, whether it is accepted or not; an
+  earlier certificate is retired in the same transaction (key and password
+  emptied). "Sluta använda certifikatet" retires it. **Instance seal:**
+  `php artisan signing:seal-certificate [--name] [--organisation] [--days=1095] [--force]`
+  (`SelfSignedSeal`: RSA 3072, self-signed, `basicConstraints CA:FALSE`,
+  `keyUsage digitalSignature, nonRepudiation`) writes the PKCS#12 to
+  `nonox.signing.seal.instance_pkcs12` (default
+  `storage/app/signing-seal/instance-seal.p12`, refused inside `public/`),
+  file `0600` in a `0700` directory, atomically by rename; the password is
+  `NONOX_SIGNING_SEAL_PASSWORD`, or one is generated and printed once. The
+  company's own certificate wins while it is valid; an expired one falls back
+  to the instance seal.
+- **Expiry to-do:** `ManageSealCertificates::raiseExpiryTasks` (hourly, in
+  `signing:seal-check`) raises one task through `SaveTask` (type `DOCUMENTS`,
+  high priority, due 14 days before expiry) for a certificate expiring within
+  60 days, assigned to its uploader while they have `signing:settings`, else
+  the owner, and stores the task id on the certificate (once). The instance
+  seal's expiry is a log warning and a line in the command's output.
+- **Never exposed.** The key and password are decrypted only in the job and
+  go to the engine on standard input (`SealRequest`, `SealCredentials` with
+  `#[SensitiveParameter]` and `__debugInfo`); the model hides them; audit
+  entries (`signing.sealed`, `signing.seal_failed`,
+  `signing.seal_certificate_uploaded`, `_retired`, `_expiry_task`,
+  `signing.instance_seal_created`) hold ids, dates, levels and codes, never a
+  name, the file, the key or the password (tests assert it).
+- **Screens:** the settings card (status of the switch and the engine, the
+  timestamp level, the certificate in use, the upload, earlier certificates)
+  is shown also while sealing is off, so a company can upload in advance; the
+  envelope page's "Försegling" card shows "Förseglas", the level and date, or
+  why it failed. The quote and agreement panels (`SigningPanel`) do not show
+  the seal yet.
+- **Hooks for S11 and S12.** `last_timestamp_at` is set at B-T; S11 adds
+  `TIMESTAMPED` versions and moves it later (the trigger allows only later).
+  `sealed_sha256` and the `SEALED` version are what the Verify page (S12)
+  looks up. `SealLevel::B_LT`/`B_LTA` are accepted by the envelope's check
+  constraint already.
+- **Not built:** basic-auth credentials, a client certificate and a policy OID
+  for the timestamp server (the helper's protocol has none; a later change to
+  `tools/pdf-engine` and `SealRequest`); HSM or PKCS#11 keys (out of scope);
+  no screenshot of a sealed file (the PDF engine is not installed on the
+  machine that takes the manual's images).
+- **Tests:** `tests/Feature/Signing/SealTest.php` (off by default; B-B with
+  the instance seal, the byte prefix, the version row, `signing:verify` and a
+  changed sealed file; B-T; a day of retries and B-B with a notice; a
+  permanent failure; the job's `failed()`; `signing:seal-check`; no engine or
+  no certificate; several signers and copies mailed once after the seal; the
+  appended page without addresses or a level; the envelope trigger; upload,
+  encryption at rest and hidden attributes; refusals (wrong password, weak
+  key, expired, not a PKCS#12, too large); permissions; replace, retire and
+  the certificate trigger; fallback after expiry; the expiry to-do; the
+  instance command (0600, `--force`, never in `public/`, a generated
+  password); the /hq switch; the settings page and the envelope page),
+  `tests/Tenancy/SigningSealTenancyTest.php`, and the tenancy catalogue.
+  Every certificate is generated at runtime; none is committed.
+- `TODO(legal-verify)`: (1) the trust-service item of gap 5 (eIDAS art.
+  3(16), art. 19, supervision by PTS) still gates the hosted service; (2) a
+  company's own seal certificate attests the company's origin and the file's
+  integrity, not a signer's will: the appended page, the settings card and the
+  manual say "Den är inte undertecknarnas underskrift", and the jurist should
+  confirm the wording; (3) whether the instance's self-signed seal, which says
+  "NONOX – försegling" or the operator's name, may be presented to recipients
+  at all on the hosted service, and with which wording; (4) the terms of use of
+  any free public timestamp service before it is configured (gap 5,
+  "Timestamp server", option 2); (5) how long the public facts of a retired
+  certificate are kept (`docs/gdpr/lagringstider.md`); (6) whether delaying
+  the completion mails up to 24 hours for a timestamp is acceptable for a
+  signer who expects their copy at once.
+
 ### Cross-reference (2026-11-20): customer price agreements (ADR-082 P5)
 
 A customer price agreement ("Prisavtal", `App\Models\PriceAgreement`) is a

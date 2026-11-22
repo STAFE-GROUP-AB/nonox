@@ -28,6 +28,9 @@ use Illuminate\Support\Facades\Schema;
  *   (ADR-077). Off by default everywhere, also on a hosted installation: the
  *   owner switches it on in /hq after confirming that the demo database may be
  *   emptied (demo:prune does nothing while it is off).
+ * - signing.seal_enabled: whether finished signed documents are sealed with
+ *   PAdES (ADR-046 S10). Off by default, and off on the hosted service until
+ *   the eIDAS trust-service question is answered.
  */
 final class InstanceSettings
 {
@@ -47,6 +50,12 @@ final class InstanceSettings
     /** Stripe in NONOX Connect (ADR-080 step 2) may be used on this installation. Off by default: the hosted service's DPA must name it first. */
     public const string STRIPE_ENABLED = 'stripe.enabled';
 
+    /**
+     * Finished signed documents are sealed (PAdES) on this installation (ADR-046 S10). Off by default: the hosted
+     * service keeps it off until the eIDAS trust-service question is answered (owner decision 2026-11-18).
+     */
+    public const string SIGNING_SEAL_ENABLED = 'signing.seal_enabled';
+
     /** @var array<string, mixed> the defaults, which are also the only keys */
     public const array DEFAULTS = [
         self::OPERATOR => null,
@@ -56,6 +65,7 @@ final class InstanceSettings
         self::DEMO_ENABLED => null,
         self::MIGRATION_GUIDES_PUBLIC => false,
         self::STRIPE_ENABLED => false,
+        self::SIGNING_SEAL_ENABLED => false,
     ];
 
     /** @var ?array<string, mixed> */
@@ -138,6 +148,12 @@ final class InstanceSettings
     public function stripeEnabled(): bool
     {
         return (bool) $this->get(self::STRIPE_ENABLED);
+    }
+
+    /** Whether finished signed documents are sealed with PAdES on this installation (ADR-046 S10). */
+    public function signingSealEnabled(): bool
+    {
+        return (bool) $this->get(self::SIGNING_SEAL_ENABLED);
     }
 
     /** Whether strangers may try NONOX on a demo company (ADR-077). */

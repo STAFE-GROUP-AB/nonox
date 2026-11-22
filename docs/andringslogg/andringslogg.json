@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-22-signering-forsegling",
+      "datum": "2026-11-22T14:30:00+01:00",
+      "rubrik": "Försegling av signerade dokument vid egen drift",
+      "beskrivning": "När alla har signerat kan dokumentet förseglas med en elektronisk stämpel (PAdES), med tidsstämpel om installationen har en tidsstämpelserver, innan kopiorna skickas. Företaget kan ladda upp ett eget förseglingscertifikat under Inställningar för företaget → Signering och får en påminnelse innan det går ut. Försegling kräver PDF-motorn och är avstängd tills den slås på för installationen, och i den driftade tjänsten är den avstängd tills en juristgranskning är klar.",
+      "typ": "Nytt",
+      "omrade": "Avtal"
+    },
+    {
       "id": "2026-11-22-signering-massutskick",
       "datum": "2026-11-22T12:20:00+01:00",
       "rubrik": "Massutskick för signering",

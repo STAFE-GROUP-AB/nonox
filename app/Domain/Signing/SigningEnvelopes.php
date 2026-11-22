@@ -6,6 +6,7 @@ namespace App\Domain\Signing;
 
 use App\Domain\Signing\Chain\SigningChain;
 use App\Domain\Signing\Retention\SigningRetention;
+use App\Domain\Signing\Seal\EnvelopeSealer;
 use App\Models\SigningDocumentVersion;
 use App\Models\SigningEnvelope;
 use App\Models\SigningLinkToken;
@@ -126,7 +127,8 @@ final class SigningEnvelopes
         $pending = $signers->filter(fn (SigningRequest $row): bool => $row->status === SigningStatus::Pending);
 
         if ($pending->isEmpty()) {
-            $envelope->forceFill(['status' => EnvelopeStatus::Completed, 'completed_at' => now(), ...SigningRetention::stamp($envelope, completed: true)])->save();
+            // Sealed in the background when sealing applies (ADR-046 S10); the completion mails then wait for the seal.
+            $envelope->forceFill(['status' => EnvelopeStatus::Completed, 'completed_at' => now(), ...SigningRetention::stamp($envelope, completed: true), ...EnvelopeSealer::start($envelope)])->save();
 
             if ($several) {
                 Audit::record('crm.signing_envelope_completed', $envelope, ['envelope_id' => $envelope->id, 'signers' => $signers->count()], $envelope->company_id);
