@@ -6,6 +6,7 @@ namespace App\Actions\Signing;
 
 use App\Domain\Pricing\PriceFloorGuard;
 use App\Domain\Signing\Chain\SigningChain;
+use App\Domain\Signing\Seal\EnvelopeSealer;
 use App\Domain\Signing\Signable;
 use App\Domain\Signing\SignableTypes;
 use App\Domain\Signing\SignedDocuments;
@@ -112,6 +113,9 @@ final class SignInSession
 
             return $request;
         }, self::ATTEMPTS));
+
+        // The seal of a completed envelope (ADR-046 S10), queued after the transaction and never throwing.
+        EnvelopeSealer::queue($signed->company_id, $signed->envelope_id);
 
         CurrentCompany::run($signed->company_id, fn () => SigningFollowUp::mailSignerCopy($signed));
 

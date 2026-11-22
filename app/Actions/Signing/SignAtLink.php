@@ -7,6 +7,7 @@ namespace App\Actions\Signing;
 use App\Domain\Signing\Chain\SigningChain;
 use App\Domain\Signing\EnvelopeStatus;
 use App\Domain\Signing\Fields\FillSigningFields;
+use App\Domain\Signing\Seal\EnvelopeSealer;
 use App\Domain\Signing\Signable;
 use App\Domain\Signing\SignatureImage;
 use App\Domain\Signing\SigningEnvelopes;
@@ -319,6 +320,9 @@ final class SignAtLink
 
         // The signature is saved. The signer's copy goes whatever happens to the order, and with a sync queue a failing
         // follow-up must never turn the signer's success into an error page: it is reported and retried by hand.
+        // The seal of a completed envelope (ADR-046 S10), queued after the transaction and never throwing.
+        EnvelopeSealer::queue($signed->company_id, $signed->envelope_id);
+
         CurrentCompany::run($signed->company_id, fn () => SigningFollowUp::mailSignerCopy($signed));
 
         // An envelope still waiting for other signers has no follow-up yet.

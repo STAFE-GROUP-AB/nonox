@@ -113,6 +113,29 @@
         <p class="mt-4 break-all text-xs text-gray-600">{{ __('SHA-256: :hash', ['hash' => $envelope->document_sha256]) }}</p>
     </x-ui.card>
 
+    @if($envelope->seal_status)
+        <x-ui.card :title="__('Försegling')" data-testid="signing-seal">
+            <p class="text-sm text-gray-700">
+                @switch($envelope->seal_status)
+                    @case(App\Domain\Signing\Seal\SealStatus::Pending)
+                        {{ __('Förseglas. Kopiorna skickas när dokumentet är förseglat.') }}
+                        @break
+                    @case(App\Domain\Signing\Seal\SealStatus::Sealed)
+                        {{ __('Förseglad :date med :level. Filen som skickades och som du laddar ner är den förseglade.', ['date' => $envelope->sealed_at?->setTimezone($zone)->format('Y-m-d H:i'), 'level' => $envelope->seal_level?->label()]) }}
+                        @if($envelope->seal_level === App\Domain\Signing\Pdf\SealLevel::B_B)
+                            {{ __('Förseglingen har ingen tidsstämpel.') }}
+                        @endif
+                        @break
+                    @default
+                        {{ __('Dokumentet kunde inte förseglas, så kopiorna skickades utan försegling (:reason).', ['reason' => App\Domain\Signing\Seal\EnvelopeSealer::failureLabel((string) $envelope->seal_failure)]) }}
+                @endswitch
+            </p>
+            @if($envelope->sealed_sha256)
+                <p class="mt-2 break-all text-xs text-gray-600">{{ __('SHA-256 för den förseglade filen: :hash', ['hash' => $envelope->sealed_sha256]) }}</p>
+            @endif
+        </x-ui.card>
+    @endif
+
     <x-ui.card :title="__('Bevarande')" data-testid="signing-retention">
         <p class="text-sm text-gray-700">
             @if($envelope->retention_until)

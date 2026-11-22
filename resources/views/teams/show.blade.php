@@ -33,6 +33,9 @@
         @endif
 
         @if($tab === 'signering')
+            @if(auth()->user()->hasTeamPermission($team, 'signing:settings'))
+                <livewire:company.signing-seal-settings :company="$team" />
+            @endif
             @if(auth()->user()->hasTeamPermission($team, 'signing:settings') || auth()->user()->hasTeamPermission($team, 'signing:hold'))
                 <livewire:company.signing-retention-settings :company="$team" />
             @endif

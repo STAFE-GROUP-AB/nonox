@@ -200,6 +200,8 @@ it('knows every column in the schema that holds a stored file path', function ()
             'signing_envelopes.document_path',
             // Every file of an envelope with its SHA-256 (ADR-046 S2): the same files as above, never linked as underlag.
             'signing_document_versions.path',
+            // The sealed file of an envelope (ADR-046 S10), also a SEALED row above: written for one envelope, never linked as underlag.
+            'signing_envelopes.sealed_path',
             // The issued invoice PDF and portal attachments (ADR-075): each written for one row only and never linked as underlag.
             'invoice_documents.path',
             'customer_portal_attachments.path',

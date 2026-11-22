@@ -29,6 +29,12 @@ final class FakePdfEngine implements PdfEngine
 
     public bool $installed = true;
 
+    /** Thrown by seal() for a level that needs a timestamp: a timestamp server that does not answer (ADR-046 S10 tests). */
+    public ?PdfEngineException $failTimestampedSeal = null;
+
+    /** @var list<array{level: string, timestampUrls: list<string>, fieldName: string}> every seal asked for, without its secrets */
+    public array $sealed = [];
+
     public static function install(): self
     {
         $fake = new self;
@@ -148,9 +154,25 @@ final class FakePdfEngine implements PdfEngine
     public function seal(string $pdfPath, string $outputPath, SealRequest $request): SealResult
     {
         TimestampServers::assertAllowed($request->timestampUrls);
-        $file = $this->append('seal', $pdfPath, $outputPath, $request->level->value);
 
-        return new SealResult($file->path, $file->bytes, $file->sha256, $request->level, hash('sha256', $request->pkcs12), $request->timestampUrls[0] ?? null);
+        $timestampFailure = $this->failTimestampedSeal;
+
+        if ($request->level->needsTimestamp() && $timestampFailure instanceof PdfEngineException) {
+            $this->record('seal', $pdfPath);
+
+            throw $timestampFailure;
+        }
+
+        $file = $this->append('seal', $pdfPath, $outputPath, $request->level->value);
+        $this->sealed[] = ['level' => $request->level->value, 'timestampUrls' => $request->timestampUrls, 'fieldName' => $request->fieldName];
+
+        // The certificate's own fingerprint, as the helper answers, when the PKCS#12 opens with its password.
+        $bundle = [];
+        $fingerprint = @openssl_pkcs12_read($request->pkcs12, $bundle, $request->password) && isset($bundle['cert']) && is_string($bundle['cert'])
+            ? (string) openssl_x509_fingerprint($bundle['cert'], 'sha256')
+            : hash('sha256', $request->pkcs12);
+
+        return new SealResult($file->path, $file->bytes, $file->sha256, $request->level, $fingerprint, $request->timestampUrls[0] ?? null);
     }
 
     public function timestamp(string $pdfPath, string $outputPath, array $timestampUrls): PdfFileResult

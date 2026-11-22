@@ -334,6 +334,7 @@ BEGIN
         ('signing_bulk_sends', 'SELECT, INSERT, UPDATE, DELETE'),
         ('signing_bulk_send_rows', 'SELECT, INSERT, UPDATE, DELETE'),
         ('signing_link_tokens', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('signing_seal_certificates', 'SELECT, INSERT, UPDATE'),
         ('signing_verification_codes', 'SELECT, INSERT, UPDATE'),
         ('skatteverket_events', 'SELECT, INSERT, UPDATE, DELETE'),
         ('skatteverket_tokens', 'SELECT, INSERT, UPDATE, DELETE'),

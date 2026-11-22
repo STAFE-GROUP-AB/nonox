@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Database\Seeders\Demo\Extras;
 
+use App\Actions\Signing\ManageSealCertificates;
 use App\Actions\Signing\RecordSigningConsent;
 use App\Actions\Signing\SendForSigning;
 use App\Actions\Signing\SignAtLink;
+use App\Domain\Signing\Seal\SelfSignedSeal;
 use App\Domain\Signing\SigningConsent;
 use App\Domain\Signing\SigningPdfs;
 use App\Models\SigningEnvelope;
@@ -32,7 +34,8 @@ use Illuminate\Support\Str;
  * S7), for the manual's pages on the envelope list, the envelope page and the
  * send wizard: three standalone documents, a signed non-disclosure agreement,
  * a lease out to two signers in order (the first has signed), and an
- * employment contract that is confidential. The PDFs are made here with dompdf
+ * employment contract that is confidential, and the company's own seal
+ * certificate (S10, made at seeding). The PDFs are made here with dompdf
  * and stored the way an upload is, without the PDF engine (the demo needs no
  * Python). Every name and address is made up; e-mail addresses end in .test.
  */
@@ -72,8 +75,21 @@ final class SigningDocumentsExtras extends DemoExtra
                 $employmentEnvelope = $send->envelope($c->user, $c->company, $employment, ['signers' => [['email' => 'eva.exempelsson@example.test', 'step' => 1, 'verification' => 'EMAIL_CODE']], 'confidential' => true], minSigners: 1);
 
                 $this->finishedBulkSend($c, $template, [$signedEnvelope, $leaseEnvelope, $employmentEnvelope]);
+                $this->sealCertificate($c);
             });
         });
+    }
+
+    /**
+     * The company's own seal certificate (ADR-046 S10), for the manual's image of the seal settings: made here
+     * with a random password that is thrown away, never committed, and self-signed like a test certificate.
+     */
+    private function sealCertificate(DemoContext $c): void
+    {
+        $password = bin2hex(random_bytes(16));
+        $seal = SelfSignedSeal::make((string) ($c->company->legal_name ?: $c->company->name).' – försegling', (string) ($c->company->legal_name ?: $c->company->name), 730, $password);
+
+        app(ManageSealCertificates::class)->upload($c->user, $c->company, $seal['pkcs12'], $password);
     }
 
     /** Two templates (ADR-046 S14): one for the draft's kind of document, with two roles, and one for quotes. Roles and settings only, so the demo needs no PDF engine. */

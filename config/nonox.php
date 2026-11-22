@@ -169,6 +169,24 @@ return [
          */
         'timestamp' => [
             'urls' => array_values(array_filter(array_map('trim', explode(',', (string) env('NONOX_SIGNING_TIMESTAMP_URLS', ''))))),
+            // Seconds to wait for one server's answer (1–60).
+            'timeout' => (int) env('NONOX_SIGNING_TIMESTAMP_TIMEOUT', 10),
+        ],
+
+        /*
+         * The PAdES seal of finished documents (ADR-046 amendment, gap 5, S10). It is
+         * switched on per installation in /hq (off by default; the hosted service keeps it
+         * off until the eIDAS trust-service question is answered) and needs the PDF engine.
+         * A company may upload its own PKCS#12; otherwise the instance's self-signed seal
+         * below is used, made by `php artisan signing:seal-certificate` (the file 0600, its
+         * directory 0700, outside the web root). Without a timestamp server the seal is
+         * PAdES B-B; with one, B-T. When no server answers, the queue keeps trying for
+         * retry_hours (default 1, at most 24) and then seals without a timestamp.
+         */
+        'seal' => [
+            'instance_pkcs12' => env('NONOX_SIGNING_SEAL_PKCS12', storage_path('app/signing-seal/instance-seal.p12')),
+            'instance_password' => env('NONOX_SIGNING_SEAL_PASSWORD', ''),
+            'retry_hours' => (int) env('NONOX_SIGNING_SEAL_RETRY_HOURS', 1),
         ],
     ],
 

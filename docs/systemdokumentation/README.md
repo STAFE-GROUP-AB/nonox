@@ -4,8 +4,8 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.157
-- Datum: 2026-11-20
+- Version: 0.158
+- Datum: 2026-11-22
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
   kontroll av huvudboken, ingående balanser, SIE-export och SIE-import,
@@ -1785,6 +1785,35 @@ balances").
   versionen med alla undertecknares värden. Text stämplas alltid inom fältets
   ruta; ett värde som inte får plats nekas.
   Signeringen bokför ingenting och ingen bokföringsregel ändras.
+- Försegling av det färdiga dokumentet (version 0.158,
+  [ADR-046](../adr/ADR-046-crm-signing.md) tillägg 2026-11-18, lucka 5, paket
+  S10). Avstängd tills den slås på för installationen i /hq
+  (`signing.seal_enabled`), och kräver PDF-motorn och ett
+  förseglingscertifikat (företagets eget, annars installationens
+  självsignerade). När ett kuvert blir klart och förseglingen gäller markeras
+  det `seal_status = PENDING` i samma transaktion, och en köad uppgift gör den
+  färdiga filen: den signerade versionen (den som skickades, eller versionen
+  efter den sista undertecknaren med fält), en sammanställningssida tillagd
+  sist och en PAdES-försegling, båda som inkrementella uppdateringar, så att
+  den signerade versionens byte är de första i den förseglade filen. Nivån är
+  PAdES B-T med en tidsstämpel (RFC 3161) från installationens
+  tidsstämpelservrar, annars B-B; svarar ingen server försöker kön igen i upp
+  till en timme (inställbart, högst ett dygn) och förseglar sedan med B-B. Den förseglade filen sparas i
+  `signing_document_versions` (`SEALED`) med sin SHA-256 och kontrolleras av
+  `signing:verify` som alla andra versioner. På kuvertet sparas nivån,
+  filen, dess SHA-256, certifikatets fingeravtryck och tiden, en gång
+  (databasutlösare: statusen går bara framåt). Kopiorna efter signering
+  väntar på förseglingen och skickas en gång, med den förseglade filen, eller
+  utan försegling om den inte gick (`seal_status = FAILED` med en kod).
+  Undertecknarnas bevis, hashkedjan och den signerade versionen ändras inte.
+  Ett företags eget certifikat sparas krypterat i
+  `signing_seal_certificates`, byts men ändras aldrig, och tappar sin nyckel
+  när det slutar användas. Behandlingshistoriken får `signing.sealed`,
+  `signing.seal_failed`, `signing.seal_certificate_uploaded`,
+  `signing.seal_certificate_retired` och
+  `signing.seal_certificate_expiry_task` med id:n, nivå och koder, aldrig
+  nyckel, lösenord eller namn. Signeringen bokför ingenting och ingen
+  bokföringsregel ändras.
 - Samtycke till elektroniska handlingar (version 0.154,
   [ADR-046](../adr/ADR-046-crm-signing.md) tillägg 2026-11-18, lucka 7, paket
   S4): innan dokumentet visas via en signeringslänk godkänner varje
@@ -7056,3 +7085,4 @@ påverkar bokföringen och fakturan:
 | 0.155 | 2026-11-19 | Bevarande och gallring av signeringar (avsnitt 5, ADR-046 tillägg 2026-11-18, lucka 11, paket S16): klasserna räkenskapsinformation (till och med 31 december sju år efter räkenskapsåret då affärshändelsen bokfördes, och minst företagets tid; datumet flyttas senare när en faktura, betalning, kreditfaktura eller kundförlust från offerten (också via dess arbetsorder), avtalet eller ÄTA:t bokförs i ett senare år), andra signerade dokument (7–25 år, förvalt 10) och inte signerade (12 månader); ett signerat avtal gallras inte medan det gäller. Triggrar vägrar ett tidigare datum, en lägre klass, ett datum under golvet och radering före datumet eller med bevarandespärr. `signing:prune` tar bort hela kuvert efter datumet och loggar `signing.envelope_deleted`. Ingen verifikation, inget underlag och ingen bokföringsregel ändras. |
 | 0.156 | 2026-11-19 | Kontoplanens hänvisning till BAS och årsrutinen (avsnitt 2): mallarna kontrollerade mot BAS officiella lista (49 namn rättade), och `bas:upgrade` flyttar företag till en ny BAS-version utan att skriva över egna kontonamn; `--fix-names` rättar en gång äldre företags namn som NONOX själv har sått (`previous-names.json`). Anläggningsregistret föreslår för nya tillgångar BAS 2026:s konton (datorer 1224, bilar 1226, båda med 1229 och 7832); sparade tillgångar byter aldrig konto. Bara `accounts.name` och `teams.bas_version` ändras; ingen verifikation, numrering eller hashkedja ändras. |
 | 0.157 | 2026-11-20 | Priser på fakturor, offerter och order (avsnitt 5.3a, ADR-082 P3): radernas à-pris och rabatt föreslås av prismotorn och kopieras till raden med källa och förklaring (id:n och belopp, inga namn); ett handskrivet pris behålls; byte av kund, datum eller valuta ändrar aldrig ett pris; ett sparat utkast prissätts om bara med "Uppdatera priser" efter en visad skillnad; offert → order → faktura behåller priserna, och en utgången offert frågar vilka priser som gäller. Avtalad rabatt bakas in i à-priset; priser inklusive moms avrundas nedåt till nettopris. Offerter och order får valuta som följer med till fakturan. En utfärdad faktura prissätts aldrig och låses av samma trigger som tidigare. Ingen verifikation, numrering eller bokföringsregel ändras. |
+| 0.158 | 2026-11-22 | Försegling av signerade dokument (ADR-046 tillägg, lucka 5, paket S10): avstängd tills den slås på i /hq; den färdiga filen (den signerade versionen med en sammanställningssida) förseglas med PAdES B-B eller B-T som inkrementella uppdateringar och sparas som `SEALED` i `signing_document_versions`; kopiorna väntar på förseglingen; företagets eget förseglingscertifikat sparas krypterat i `signing_seal_certificates`. Ingenting bokförs och ingen verifikation, numrering eller hashkedja ändras. |
