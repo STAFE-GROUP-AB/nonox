@@ -223,7 +223,10 @@ final class ProcessSigningBulkSend
             $this->discard($user, $company, $document);
 
             if (MailQuota::remaining($company, 'documents') < $needed) {
-                SigningBulkSendRow::query()->whereKey($row->id)->where('status', SigningBulkSendRow::PROCESSING)->update(['status' => SigningBulkSendRow::PENDING, 'document_id' => null]);
+                $going = SigningBulkSend::query()->whereKey($row->bulk_send_id)->value('status') === SigningBulkSend::RUNNING;
+                SigningBulkSendRow::query()->whereKey($row->id)->where('status', SigningBulkSendRow::PROCESSING)->update($going
+                    ? ['status' => SigningBulkSendRow::PENDING, 'document_id' => null]
+                    : ['status' => SigningBulkSendRow::SKIPPED, 'reason' => __('Massutskicket avbröts innan raden skickades.'), 'payload' => null, 'processed_at' => now()]);
 
                 return;
             }
@@ -339,11 +342,7 @@ final class ProcessSigningBulkSend
 
     private function count(SigningBulkSend $run): void
     {
-        $counts = SigningBulkSendRow::query()->where('bulk_send_id', $run->id)
-            ->selectRaw("count(*) filter (where status = 'SENT') as sent, count(*) filter (where status = 'FAILED') as failed")
-            ->first();
-
-        $run->forceFill(['sent_count' => (int) ($counts->sent ?? 0), 'failed_count' => (int) ($counts->failed ?? 0)])->save();
+        $this->runs->recount($run);
     }
 
     private function again(SigningBulkSend $run, int $seconds): void

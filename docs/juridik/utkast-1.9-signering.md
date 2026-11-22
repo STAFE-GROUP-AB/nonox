@@ -32,7 +32,7 @@ avtal" under CRM och läggs till för alla:
 
 > Med signering: e-postadressen länken eller kopian gick till, namn och titel, namnteckning eller
 > initialer (krypterade), uppgifter som undertecknaren fyller i fält i dokumentet, tidpunkter,
-> IP-adress och webbläsare, hur undertecknaren kontrollerades (kontrollsummor av koder; en åtkomstkod ur ett massutskick finns krypterad i klartext bara tills signeringen har skickats, se nedan),
+> IP-adress och webbläsare, hur undertecknaren kontrollerades (kontrollsummor av koder; en åtkomstkod ur ett massutskick sparas krypterad, så att den kan läsas av tjänsten, bara tills signeringen har skickats, se nedan),
 > händelserna i en hashkedja, ett eventuellt skäl att avböja, och dokumentet med dess versioner
 > och kontrollsummor. Ett dokument som den personuppgiftsansvarige laddar upp kan innehålla
 > vilka uppgifter som helst; den personuppgiftsansvarige bestämmer innehållet och ändamålet.

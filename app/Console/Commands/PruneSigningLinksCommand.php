@@ -33,6 +33,7 @@ class PruneSigningLinksCommand extends Command
         $companies = DB::table('crm_signing_requests')->select('company_id')
             ->union(DB::table('signing_envelopes')->select('company_id'))
             ->union(DB::table('signing_documents')->select('company_id'))
+            ->union(DB::table('signing_bulk_sends')->select('company_id'))
             ->pluck('company_id')->map(fn (mixed $id): int => (int) $id)->unique()->sort()->values()->all();
         $totals = ['links' => 0, 'envelopes' => 0, 'documents' => 0];
 

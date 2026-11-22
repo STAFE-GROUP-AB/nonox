@@ -229,16 +229,16 @@ final class ManageSigningBulkSends
             }
         }
 
-        $leftover = SigningBulkSend::query()->where('status', SigningBulkSend::CANCELLED)->whereExists(fn ($query) => $query->selectRaw('1')->from('signing_bulk_send_rows')->whereColumn('signing_bulk_send_rows.bulk_send_id', 'signing_bulk_sends.id')->where('status', SigningBulkSendRow::PROCESSING))->get();
+        $leftover = SigningBulkSend::query()->whereIn('status', [SigningBulkSend::CANCELLED, SigningBulkSend::COMPLETED])->whereExists(fn ($query) => $query->selectRaw('1')->from('signing_bulk_send_rows')->whereColumn('signing_bulk_send_rows.bulk_send_id', 'signing_bulk_sends.id')->whereIn('status', [SigningBulkSendRow::PROCESSING, SigningBulkSendRow::PENDING]))->get();
 
         foreach ($leftover as $run) {
             $this->settleSent($run);
-            SigningBulkSendRow::query()->where('bulk_send_id', $run->id)->where('status', SigningBulkSendRow::PROCESSING)->update(['status' => SigningBulkSendRow::SKIPPED, 'reason' => __('Massutskicket avbröts innan raden skickades.'), 'payload' => null, 'processed_at' => now()]);
+            SigningBulkSendRow::query()->where('bulk_send_id', $run->id)->whereIn('status', [SigningBulkSendRow::PROCESSING, SigningBulkSendRow::PENDING])->update(['status' => SigningBulkSendRow::SKIPPED, 'reason' => __('Massutskicket avbröts innan raden skickades.'), 'payload' => null, 'processed_at' => now()]);
             $this->recount($run);
         }
     }
 
-    private function recount(SigningBulkSend $run): void
+    public function recount(SigningBulkSend $run): void
     {
         $counts = SigningBulkSendRow::query()->where('bulk_send_id', $run->id)
             ->selectRaw("count(*) filter (where status = 'SENT') as sent, count(*) filter (where status in ('FAILED', 'SKIPPED')) as failed")
@@ -253,7 +253,14 @@ final class ManageSigningBulkSends
         SigningBulkSendRow::query()->where('bulk_send_id', $run->id)->whereNotNull('payload')->update(['payload' => null]);
 
         $this->recount($run);
-        $run->forceFill(['status' => $status, 'finished_at' => CarbonImmutable::now()])->save();
+
+        // Only a run that is still going can end: a cancel that came in meanwhile is not overwritten, and writes no second end.
+        $ended = SigningBulkSend::query()->whereKey($run->id)->where('status', SigningBulkSend::RUNNING)->update(['status' => $status, 'finished_at' => CarbonImmutable::now()]);
+        $run->refresh();
+
+        if ($ended !== 1) {
+            return;
+        }
 
         Audit::record($audit, $run, ['signing_bulk_send_id' => $run->id, 'sent' => $run->sent_count, 'failed' => $run->failed_count], $company, $user);
     }

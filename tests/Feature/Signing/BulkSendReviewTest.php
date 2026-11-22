@@ -228,3 +228,47 @@ it('removes abandoned temporary uploads older than a day on a schedule', functio
     $scheduled = collect(app(Schedule::class)->events())->contains(fn ($event): bool => str_contains((string) $event->command, 'uploads:prune-temporary'));
     expect($scheduled)->toBeTrue();
 });
+
+it('keeps a run cancelled while a row was being sent cancelled, and writes no completed entry', function () {
+    $path = s15rFile(1);
+    $run = $this->runs->prepare($this->owner, $this->company, $this->template, $path);
+    @unlink($path);
+    $this->runs->confirm($this->owner, $this->company, $run);
+
+    SigningEnvelope::created(function () use ($run): void {
+        DB::table('signing_bulk_sends')->where('id', $run->id)->update(['status' => 'CANCELLED', 'finished_at' => now()]);
+    });
+
+    app(ProcessSigningBulkSend::class)($this->company->id, $run->id);
+
+    expect($run->refresh()->status)->toBe('CANCELLED')
+        ->and(DB::table('audit_logs')->where('action', 'signing.bulk_send_completed')->count())->toBe(0)
+        ->and(SigningBulkSendRow::query()->where('bulk_send_id', $run->id)->value('status'))->toBe('SENT');
+});
+
+it('skips rows left pending on an ended run, and counts them as not sent', function () {
+    $path = s15rFile(3);
+    $run = $this->runs->prepare($this->owner, $this->company, $this->template, $path);
+    @unlink($path);
+    $this->runs->confirm($this->owner, $this->company, $run);
+    DB::table('signing_bulk_sends')->where('id', $run->id)->update(['status' => 'CANCELLED', 'finished_at' => now()]);
+
+    app(PruneSigningLinks::class)->run(CarbonImmutable::now());
+
+    $run->refresh();
+    expect(SigningBulkSendRow::query()->where('bulk_send_id', $run->id)->where('status', 'SKIPPED')->count())->toBe(3)
+        ->and(SigningBulkSendRow::query()->where('bulk_send_id', $run->id)->where('status', 'PENDING')->count())->toBe(0)
+        ->and($run->failed_count)->toBe(3);
+});
+
+it('prunes a company that has only bulk sends', function () {
+    $path = s15rFile(1);
+    $run = $this->runs->prepare($this->owner, $this->company, $this->template, $path);
+    @unlink($path);
+    DB::table('signing_bulk_sends')->where('id', $run->id)->update(['created_at' => now()->subHours(30)]);
+    DB::table('signing_documents')->where('company_id', $this->company->id)->delete();
+
+    $this->artisan('signing:prune')->assertExitCode(0);
+
+    expect(DB::table('signing_bulk_sends')->where('id', $run->id)->exists())->toBeFalse();
+});
