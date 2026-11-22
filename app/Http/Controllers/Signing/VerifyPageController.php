@@ -26,8 +26,9 @@ use Symfony\Component\HttpFoundation\Response;
  * scripts from NONOX only.
  *
  * The wording is "kontrollera att filen är oförändrad", never "validera
- * underskriften" (TODO(legal-verify): whether this is validation in the sense
- * of eIDAS art. 3(16)(a); see the ADR).
+ * underskriften". TODO(legal-verify): whether the page is a validation trust
+ * service under eIDAS art. 3.16 as amended by (EU) 2024/1183 (see also art.
+ * 3(41)); verify the point against the consolidated text; see the ADR.
  */
 final class VerifyPageController
 {
@@ -44,7 +45,11 @@ final class VerifyPageController
                 'tooMany' => __('Du har kontrollerat många filer på kort tid. Vänta en minut och försök igen.'),
                 'failed' => __('Kontrollen gick inte att göra just nu. Försök igen om en stund.'),
                 'noCrypto' => __('Din webbläsare kan inte räkna ut kontrollsumman. Använd en nyare webbläsare.'),
-                'fromLink' => __('Resultatet gäller kontrollsumman i länken, inte någon fil på din enhet. Välj filen ovan för att kontrollera att den är oförändrad.'),
+                'unchanged' => __('Filen är oförändrad'),
+                'fileNote' => __('Filen du valde är byte för byte lika med en fil som NONOX har sparat för den här signeringen. Sidan kontrollerar inte vem som har skrivit under eller om en underskrift eller stämpel är giltig.'),
+                'fileMany' => __('Filen du valde är byte för byte lika med en fil som NONOX har sparat. Sidan kontrollerar inte vem som har skrivit under eller om en underskrift eller stämpel är giltig.'),
+                'fromLink' => __('Kontrollsumman i länken finns hos NONOX. Det säger inget om filen du har; välj filen ovan för att kontrollera den.'),
+                'chosenFile' => __('Filen du valde'),
             ],
         ]), page: true);
     }
@@ -68,9 +73,7 @@ final class VerifyPageController
             return $this->private(response()->json(['message' => __('Kontrollsumman är inte 64 tecken 0–9 och a–f.')], 422));
         }
 
-        $answer = $this->lookup->find((string) $input['sha256']);
-
-        return $this->private(response()->json(['found' => $answer !== null, ...($answer ?? $this->lookup->notFound())]));
+        return $this->private(response()->json($this->lookup->find((string) $input['sha256'])));
     }
 
     private function abortUnlessOn(): void

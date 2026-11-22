@@ -7,7 +7,7 @@
  * third-party code: the page's content security policy allows NONOX's own
  * scripts only.
  */
-import { hashFile, hashFromFragment, isSha256, requestBody } from './verify-core.js';
+import { hashFile, hashFromFragment, isSha256, latestGuard, requestBody, resultHeading, resultNote } from './verify-core.js';
 
 const root = document.querySelector('[data-verify]');
 
@@ -21,15 +21,26 @@ if (root) {
     const url = root.dataset.verifyUrl;
     const csrf = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
     const text = JSON.parse(root.dataset.verifyText ?? '{}');
-    let busy = false;
+    // Every choice gets its own number and its own AbortController; an answer that is not for the latest choice is dropped.
+    const guard = latestGuard();
+    let controller = null;
 
     const say = (message) => {
         status.textContent = message;
     };
 
-    const show = (data, source) => {
-        heading.textContent = data.heading;
+    const show = (data, source, name) => {
+        // "Filen är oförändrad" is said only when a chosen file matched exactly one signing.
+        heading.textContent = resultHeading(data.status, source, data.heading, text);
         list.replaceChildren();
+
+        if (source === 'file' && name) {
+            const term = document.createElement('dt');
+            const detail = document.createElement('dd');
+            term.textContent = text.chosenFile;
+            detail.textContent = name;
+            list.append(term, detail);
+        }
 
         for (const [label, value] of data.lines ?? []) {
             const term = document.createElement('dt');
@@ -39,18 +50,20 @@ if (root) {
             list.append(term, detail);
         }
 
-        note.textContent = source === 'link' ? text.fromLink : '';
+        note.textContent = resultNote(data.status, source, text);
         result.dataset.found = data.found ? 'true' : 'false';
         result.hidden = false;
         result.focus();
     };
 
-    const check = async (hash, source) => {
-        if (busy || !isSha256(hash)) {
+    const check = async (hash, source, name, ticket) => {
+        if (!isSha256(hash)) {
             return;
         }
 
-        busy = true;
+        controller?.abort();
+        controller = new AbortController();
+        const mine = controller;
         result.hidden = true;
         say(text.working);
 
@@ -61,7 +74,12 @@ if (root) {
                 body: requestBody(hash),
                 credentials: 'same-origin',
                 referrerPolicy: 'no-referrer',
+                signal: mine.signal,
             });
+
+            if (!guard.isCurrent(ticket)) {
+                return;
+            }
 
             if (response.status === 429) {
                 say(text.tooMany);
@@ -75,12 +93,18 @@ if (root) {
                 return;
             }
 
+            const data = await response.json();
+
+            if (!guard.isCurrent(ticket)) {
+                return;
+            }
+
             say('');
-            show(await response.json(), source);
+            show(data, source, name);
         } catch {
-            say(text.failed);
-        } finally {
-            busy = false;
+            if (guard.isCurrent(ticket)) {
+                say(text.failed);
+            }
         }
     };
 
@@ -91,12 +115,23 @@ if (root) {
             return;
         }
 
+        const ticket = guard.next();
+        controller?.abort();
+        result.hidden = true;
         say(text.hashing);
 
         try {
-            await check(await hashFile(file), 'file');
+            const hash = await hashFile(file);
+
+            if (!guard.isCurrent(ticket)) {
+                return;
+            }
+
+            await check(hash, 'file', file.name, ticket);
         } catch {
-            say(text.noCrypto);
+            if (guard.isCurrent(ticket)) {
+                say(text.noCrypto);
+            }
         }
 
         input.value = '';
@@ -106,6 +141,6 @@ if (root) {
 
     if (fromLink) {
         history.replaceState(null, '', window.location.pathname + window.location.search);
-        check(fromLink, 'link');
+        check(fromLink, 'link', '', guard.next());
     }
 }

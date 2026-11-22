@@ -18,90 +18,106 @@ use Illuminate\Support\Collection;
 
 /**
  * What the public Verify page may say about a SHA-256 (ADR-046 amendment,
- * gap 6, S12): whether NONOX keeps a file with exactly that hash, and then
- * only the facts the amendment lists. Never a signer's name, e-mail address
- * or IP address (owner decision 11), never an internal id, never anything
- * for an envelope that is still out, a draft or has expired.
+ * gap 6, S12, as decided 2026-11-22): whether NONOX keeps a file with exactly
+ * that hash, and then only the facts below. Never a signer's name, e-mail
+ * address or IP address (owner decision 11), never the document's title,
+ * never an internal id.
+ *
+ * Only a completed envelope of a company that has switched the page on is
+ * answered; anything else is "not found", exactly alike. Details are given
+ * only when the hash is in exactly one envelope; in more than one (the same
+ * PDF sent twice, by one company or two) the answer says so and nothing else.
  *
  * The lookup is across companies by design (the visitor has no account and
  * the hash is the key), inside CompanyScope::bypass for exactly the versions
  * and envelopes it names; everything else is read for the one company found.
- * A miss costs one query, a hit five, whatever the number of rows.
+ * A miss costs one query, a hit six, whatever the number of rows.
  */
 final class VerifyLookup
 {
-    /** How many versions with the same hash are read; the newest answerable envelope is the one shown. */
-    private const int CANDIDATES = 8;
+    public const string ONE = 'one';
+
+    public const string MANY = 'many';
+
+    public const string NONE = 'none';
 
     /**
-     * @return ?array{heading: string, lines: list<array{string, string}>} null when no file with that hash is kept
+     * @return array{status: string, found: bool, heading: string, lines: list<array{string, string}>}
      */
-    public function find(string $sha256): ?array
+    public function find(string $sha256): array
     {
         // Across companies on purpose (ADR-046 amendment, gap 6): the hash is the only key a visitor has.
-        [$versions, $envelopes] = CompanyScope::bypass(function () use ($sha256): array {
-            // Indexed on sha256 (signing_document_versions_sha256_index).
-            $versions = SigningDocumentVersion::query()->where('sha256', $sha256)->orderByDesc('id')->limit(self::CANDIDATES)
-                ->get(['id', 'company_id', 'envelope_id', 'kind', 'signing_request_id', 'sha256']);
+        // Completed envelopes of companies with the page on, decided in the query, before anything is counted.
+        $envelopeIds = CompanyScope::bypass(fn (): array => SigningDocumentVersion::query()
+            ->where('sha256', $sha256)
+            ->whereIn('envelope_id', fn ($query) => $query->select('signing_envelopes.id')->from('signing_envelopes')
+                ->join('teams', 'teams.id', '=', 'signing_envelopes.company_id')
+                ->where('signing_envelopes.status', EnvelopeStatus::Completed->value)
+                ->where('teams.signing_verify_enabled', true))
+            ->distinct()->limit(2)->pluck('envelope_id')->all());
 
-            if ($versions->isEmpty()) {
-                return [$versions, collect()];
-            }
-
-            return [$versions, SigningEnvelope::query()->whereIn('id', $versions->pluck('envelope_id')->unique()->all())->get()->keyBy('id')];
-        });
-
-        $answerable = $versions->filter(fn (SigningDocumentVersion $version): bool => $this->answers($envelopes->get($version->envelope_id)))->values();
-        $version = $answerable->first();
-
-        if (! $version instanceof SigningDocumentVersion) {
-            return null;
+        if ($envelopeIds === []) {
+            return $this->notFound();
         }
 
-        /** @var SigningEnvelope $envelope */
-        $envelope = $envelopes->get($version->envelope_id);
+        if (count($envelopeIds) > 1) {
+            return $this->many();
+        }
+
+        [$version, $envelope] = CompanyScope::bypass(function () use ($sha256, $envelopeIds): array {
+            $version = SigningDocumentVersion::query()->where('sha256', $sha256)->where('envelope_id', $envelopeIds[0])->orderBy('id')->first(['id', 'company_id', 'envelope_id', 'kind', 'signing_request_id', 'sha256', 'created_at']);
+
+            return [$version, SigningEnvelope::query()->find($envelopeIds[0])];
+        });
+
+        if (! $version instanceof SigningDocumentVersion || ! $envelope instanceof SigningEnvelope) {
+            return $this->notFound();
+        }
+
         $company = Company::query()->find($envelope->company_id, ['id', 'name', 'legal_name']);
         $signers = CompanyScope::bypass(fn (): Collection => SigningRequest::query()->where('envelope_id', $envelope->id)->orderBy('step')->orderBy('id')->get(['id', 'step', 'status', 'verification']));
         $check = AuditLog::query()->where('company_id', $envelope->company_id)->where('action', VerifySigningChainsCommand::ACTION)->latest('id')->first(['payload', 'created_at']);
 
-        return $this->describe($version, $envelope, $company, $signers, $check, $answerable->count());
+        return $this->describe($version, $envelope, $company, $signers, $check);
     }
 
     /**
-     * The answer for a file NONOX does not keep. The same shape as a hit.
+     * The answer for a file NONOX does not keep, or whose company has not switched the page on. The same shape as a hit.
      *
-     * @return array{heading: string, lines: list<array{string, string}>}
+     * @return array{status: string, found: bool, heading: string, lines: list<array{string, string}>}
      */
     public function notFound(): array
     {
-        return ['heading' => __('Filen finns inte hos NONOX'), 'lines' => [[
+        return ['status' => self::NONE, 'found' => false, 'heading' => __('Filen finns inte hos NONOX'), 'lines' => [[
             __('Vad det betyder'),
             __('NONOX har ingen signering med en fil som är exakt den här. Filen kan vara ändrad, vara en annan fil än den som signerades, eller höra till en signering som inte längre sparas.'),
         ]]];
     }
 
-    /** Completed, declined and voided envelopes are answered, also for archived companies (evidence stays checkable); nothing else. */
-    private function answers(?SigningEnvelope $envelope): bool
+    /**
+     * @return array{status: string, found: bool, heading: string, lines: list<array{string, string}>}
+     */
+    private function many(): array
     {
-        return $envelope instanceof SigningEnvelope
-            && in_array($envelope->status, [EnvelopeStatus::Completed, EnvelopeStatus::Declined, EnvelopeStatus::Voided], true);
+        return ['status' => self::MANY, 'found' => true, 'heading' => __('NONOX har en fil med den här kontrollsumman'), 'lines' => [[
+            __('Vad det betyder'),
+            __('Den här filen har skickats för signering mer än en gång, så sidan kan inte säga vilken signering den hör till. Kontrollera i stället den signerade filen eller den förseglade filen som du fick efter signeringen.'),
+        ]]];
     }
 
     /**
      * @param  Collection<int, SigningRequest>  $signers
-     * @return array{heading: string, lines: list<array{string, string}>}
+     * @return array{status: string, found: bool, heading: string, lines: list<array{string, string}>}
      */
-    private function describe(SigningDocumentVersion $version, SigningEnvelope $envelope, ?Company $company, Collection $signers, ?AuditLog $check, int $matches): array
+    private function describe(SigningDocumentVersion $version, SigningEnvelope $envelope, ?Company $company, Collection $signers, ?AuditLog $check): array
     {
         $zone = config('app.timezone');
         $time = fn (mixed $value): string => $value === null ? '–' : $value->setTimezone($zone)->format('Y-m-d H:i');
         $lines = [];
 
         $lines[] = [__('Företag'), $company instanceof Company ? ($company->legal_name ?: $company->name) : '–'];
-        // A confidential envelope's title is seen only by its sender and by those who manage signing (S7).
-        $lines[] = [__('Dokument'), $envelope->confidential ? __('Konfidentiellt dokument') : (string) ($envelope->title ?: '–')];
         $lines[] = [__('Filen är'), $this->versionLabel($version, $signers)];
-        $lines[] = [__('Läge'), $this->stateLine($envelope, $time)];
+        $lines[] = [__('Läge'), __('Signerat av alla, :time', ['time' => $time($envelope->completed_at)])];
 
         $signed = $signers->filter(fn (SigningRequest $signer): bool => $signer->status === SigningStatus::Signed);
         $lines[] = [__('Undertecknare'), __(':signed av :total har signerat', ['signed' => $signed->count(), 'total' => $signers->count()])];
@@ -112,16 +128,21 @@ final class VerifyLookup
             $lines[] = [__('Kontroll av undertecknarna'), $methods->implode(', ')];
         }
 
-        $lines[] = [__('Försegling'), $envelope->seal_status === SealStatus::Sealed && $envelope->seal_level !== null ? $envelope->seal_level->label() : __('Ingen försegling')];
-        $lines[] = [__('Händelsekedjan'), $this->chainLine($envelope, $check, $time)];
+        $lines[] = [__('Förseglad av NONOX'), $this->sealLine($version, $envelope)];
+        $lines[] = [__('Händelsekedjan'), $this->chainLine($envelope, $version, $check, $time)];
 
-        if ($matches > 1) {
-            $lines[] = [__('Observera'), __('Samma fil finns i flera signeringar. Den senaste visas.')];
-        }
+        return ['status' => self::ONE, 'found' => true, 'heading' => __('NONOX har en fil med den här kontrollsumman'), 'lines' => $lines];
+    }
 
-        $lines[] = [__('Vad det betyder'), __('Filen är oförändrad: den är exakt den fil som NONOX sparade. Sidan kontrollerar inte vem som har skrivit under eller om en underskrift är giltig.')];
+    /** A seal level only for a file that is the sealed or the re-timestamped one; the page does not check the seal in the file. */
+    private function sealLine(SigningDocumentVersion $version, SigningEnvelope $envelope): string
+    {
+        $sealed = in_array($version->kind, [SigningDocumentVersion::SEALED, SigningDocumentVersion::TIMESTAMPED], true)
+            && $envelope->seal_status === SealStatus::Sealed && $envelope->seal_level !== null;
 
-        return ['heading' => __('Filen är oförändrad'), 'lines' => $lines];
+        return $sealed
+            ? __(':level (sidan kontrollerar inte stämpeln i filen; öppna filen i en PDF-läsare för det)', ['level' => $envelope->seal_level->label()])
+            : __('Inte förseglad');
     }
 
     /** @param  Collection<int, SigningRequest>  $signers */
@@ -146,19 +167,17 @@ final class VerifyLookup
             : __('En version efter en underskrift');
     }
 
-    private function stateLine(SigningEnvelope $envelope, callable $time): string
+    /**
+     * What the latest nightly run (signing:verify) found, in words. Only a run that came after the file and the
+     * completion can have covered this envelope; an earlier one, or none, is said as it is.
+     */
+    private function chainLine(SigningEnvelope $envelope, SigningDocumentVersion $version, ?AuditLog $check, callable $time): string
     {
-        return match ($envelope->status) {
-            EnvelopeStatus::Completed => __('Signerat av alla, :time', ['time' => $time($envelope->completed_at)]),
-            EnvelopeStatus::Declined => __('Avböjt, :time', ['time' => $time($envelope->declined_at)]),
-            default => __('Tillbakadraget, :time', ['time' => $time($envelope->voided_at)]),
-        };
-    }
+        $covered = $check instanceof AuditLog
+            && $envelope->completed_at !== null
+            && $check->created_at >= max($envelope->completed_at, $version->created_at);
 
-    /** What the latest nightly run (signing:verify) found, in words; no run yet is said as it is. */
-    private function chainLine(SigningEnvelope $envelope, ?AuditLog $check, callable $time): string
-    {
-        if (! $check instanceof AuditLog) {
+        if (! $covered) {
             return __('Har inte kontrollerats än');
         }
 

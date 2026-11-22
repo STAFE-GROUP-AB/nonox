@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { webcrypto } from 'node:crypto';
 import { test } from 'node:test';
-import { hashFile, hashFromFragment, isSha256, requestBody, toHex } from '../../resources/js/verify-core.js';
+import { hashFile, hashFromFragment, isSha256, latestGuard, requestBody, resultHeading, resultNote, toHex } from '../../resources/js/verify-core.js';
 
 const ABC = 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad';
 
@@ -46,4 +46,31 @@ test('reads the hash from the fragment of the certificate link', () => {
 
 test('the request body holds only the hash', () => {
     assert.deepEqual(JSON.parse(requestBody(ABC)), { sha256: ABC });
+});
+
+const TEXT = { unchanged: 'Filen är oförändrad', fileNote: 'fil', fileMany: 'fil flera', fromLink: 'länk' };
+
+test('says the file is unchanged only for a chosen file that matched one signing', () => {
+    assert.equal(resultHeading('one', 'file', 'Neutral', TEXT), 'Filen är oförändrad');
+    assert.equal(resultHeading('one', 'link', 'Neutral', TEXT), 'Neutral');
+    assert.equal(resultHeading('many', 'file', 'Neutral', TEXT), 'Neutral');
+    assert.equal(resultHeading('none', 'file', 'Finns inte', TEXT), 'Finns inte');
+});
+
+test('the note says what the result is about', () => {
+    assert.equal(resultNote('one', 'file', TEXT), 'fil');
+    assert.equal(resultNote('many', 'file', TEXT), 'fil flera');
+    assert.equal(resultNote('none', 'file', TEXT), '');
+    assert.equal(resultNote('one', 'link', TEXT), 'länk');
+    assert.equal(resultNote('many', 'link', TEXT), 'länk');
+    assert.equal(resultNote('none', 'link', TEXT), '');
+});
+
+test('only the latest choice is current, so a slow earlier answer is dropped', () => {
+    const guard = latestGuard();
+    const first = guard.next();
+    const second = guard.next();
+
+    assert.equal(guard.isCurrent(first), false);
+    assert.equal(guard.isCurrent(second), true);
 });

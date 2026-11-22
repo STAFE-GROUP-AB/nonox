@@ -37,3 +37,31 @@ export function hashFromFragment(fragment) {
 export function requestBody(hash) {
     return JSON.stringify({ sha256: hash });
 }
+
+/** The words under a result: what it says about a chosen file, or about the hash in a link. */
+export function resultNote(status, source, text) {
+    if (source === 'link') {
+        return status === 'none' ? '' : text.fromLink;
+    }
+
+    if (status === 'one') {
+        return text.fileNote;
+    }
+
+    return status === 'many' ? text.fileMany : '';
+}
+
+/** "Filen är oförändrad" only when a chosen file matched exactly one signing; otherwise the server's neutral heading. */
+export function resultHeading(status, source, serverHeading, text) {
+    return source === 'file' && status === 'one' ? text.unchanged : serverHeading;
+}
+
+/** A counter that tells whether an answer is still for the latest choice. */
+export function latestGuard() {
+    let current = 0;
+
+    return {
+        next: () => ++current,
+        isCurrent: (ticket) => ticket === current,
+    };
+}

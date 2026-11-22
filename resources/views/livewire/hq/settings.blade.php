@@ -90,7 +90,7 @@
                     <input id="hq-signing-verify-enabled" type="checkbox" wire:model="signingVerifyEnabled" class="mt-1 h-5 w-5 rounded border-gray-300 text-accent-600 focus:ring-accent-500" aria-describedby="hq-signing-verify-enabled-hint">
                     <div>
                         <label for="hq-signing-verify-enabled" class="text-sm font-medium text-gray-800">{{ __('Kontrollsidan för signerade dokument') }}</label>
-                        <p id="hq-signing-verify-enabled-hint" class="text-sm text-gray-600">{{ __('På: sidan /kontrollera visar om en fil är oförändrad jämfört med ett dokument som NONOX har sparat, och signeringsbevisen får en QR-kod till sidan. Av: sidan finns inte (404) och bevisen har ingen QR-kod. I den driftade tjänsten: sätt på först när juristen har svarat på frågan om betrodda tjänster enligt eIDAS.') }}</p>
+                        <p id="hq-signing-verify-enabled-hint" class="text-sm text-gray-600">{{ __('På: sidan /kontrollera visar om en fil är oförändrad jämfört med ett färdigt signerat dokument som NONOX har sparat, för de företag som själva har slagit på den (Inställningar för företaget → Signering), och deras signeringsbevis får en QR-kod till sidan. Av: sidan finns inte (404) och bevisen har ingen QR-kod. I den driftade tjänsten: sätt på först när juristen har svarat på frågan om betrodda tjänster enligt eIDAS.') }}</p>
                     </div>
                 </div>
             </div>
