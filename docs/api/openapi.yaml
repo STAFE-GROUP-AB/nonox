@@ -9616,7 +9616,7 @@ paths:
       tags:
         - Priser
       summary: 'Create a price list'
-      description: 'Makes a price list with the same rules as the screen: a code unique in the company, a type (STANDARD, CAMPAIGN or CHANNEL), a currency, optionally derived from another list of the same currency by derived_percent_bp (hundredths of a percent, -1250 is 12,5 % lower) with a rounding rule. A campaign needs both dates; a channel list needs channel POS or PORTAL; a campaign may name one channel (SALES, PORTAL, POS, RECURRING or WORK_ORDER) or none, and then applies only there. Needs price-lists:manage.'
+      description: 'Makes a price list with the same rules as the screen: a code unique in the company, a type (STANDARD, CAMPAIGN or CHANNEL), a currency, optionally derived from another list of the same currency by derived_percent_bp (hundredths of a percent, -1250 is 12,5 % lower) with a rounding rule. A campaign needs both dates; a channel list needs channel POS or PORTAL; a campaign may name POS or SALES or none; SALES covers every document channel except the till and the portal. Needs price-lists:manage.'
       x-sv-summary: 'Skapa prislista'
       x-sv-description: 'Skapar en prislista med samma regler som i appen: unik kod, typ, valuta och eventuellt härledd från en annan lista.'
       security:
@@ -16099,7 +16099,7 @@ components:
         channel:
           type: [string, 'null']
           enum: [SALES, PORTAL, POS, RECURRING, WORK_ORDER, null]
-          description: 'A CHANNEL list needs POS or PORTAL. A CAMPAIGN list may name one channel (any value), and then applies only to prices asked for in that channel; null means all channels. Ignored for a STANDARD list.'
+          description: 'A CHANNEL list needs POS or PORTAL. A CAMPAIGN list may name POS (the till only) or SALES (every document: SALES, RECURRING and WORK_ORDER, not the till or the portal); null means all channels. Other values are refused on a campaign. Ignored for a STANDARD list.'
         group_ids:
           type: array
           items:

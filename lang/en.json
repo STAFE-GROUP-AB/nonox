@@ -15051,5 +15051,7 @@
     "Kanal": "Channel",
     "Alla kanaler": "All channels",
     "Fakturor och offerter": "Invoices and quotes",
-    "Återkommande fakturor": "Recurring invoices"
+    "Återkommande fakturor": "Recurring invoices",
+    "Fakturor, offerter och order": "Invoices, quotes and orders",
+    "En kampanj kan gälla alla kanaler, kassan eller fakturor, offerter och order.": "A campaign can apply to all channels, the till, or invoices, quotes and orders."
 }

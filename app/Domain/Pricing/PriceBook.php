@@ -427,6 +427,20 @@ final class PriceBook
         return null;
     }
 
+    /**
+     * A campaign for the till reaches only the till. A campaign for SALES
+     * reaches every document channel but the till and the portal: SALES,
+     * RECURRING and WORK_ORDER (a draft is re-priced under SALES when edited).
+     */
+    private static function campaignReaches(PriceChannel $campaign, PriceChannel $asked): bool
+    {
+        if ($campaign === PriceChannel::Sales) {
+            return in_array($asked, [PriceChannel::Sales, PriceChannel::Recurring, PriceChannel::WorkOrder], true);
+        }
+
+        return $campaign === $asked;
+    }
+
     /** Step 4: the lowest campaign for everyone, the customer's group or the channel. */
     /** @param  \Closure(): ?PriceCandidate  $reference */
     private function bestCampaign(PricedRow $row, \Closure $reference): ?PriceCandidate
@@ -438,7 +452,7 @@ final class PriceBook
                 continue;
             }
 
-            if ($list->channel !== null && $list->channel !== $this->context->channel) {
+            if ($list->channel !== null && ! self::campaignReaches($list->channel, $this->context->channel)) {
                 continue;
             }
 

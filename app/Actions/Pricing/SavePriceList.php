@@ -155,14 +155,18 @@ class SavePriceList
     }
 
     /**
-     * A channel list always names its channel; a campaign may name one (every
-     * PriceChannel case, the resolver gets the document's channel) or none.
+     * A channel list always names its channel; a campaign may name the till (POS),
+     * all documents (SALES) or none.
      *
      * @param  array<string, mixed>  $validated
      */
     private function channel(PriceListKind $kind, array $validated): ?PriceChannel
     {
         $channel = (string) ($validated['channel'] ?? '');
+
+        if ($kind === PriceListKind::Campaign && $channel !== '' && ! in_array(PriceChannel::tryFrom($channel), PriceChannel::campaignChoices(), true)) {
+            throw ValidationException::withMessages(['channel' => __('En kampanj kan gälla alla kanaler, kassan eller fakturor, offerter och order.')]);
+        }
 
         if ($kind === PriceListKind::Channel || ($kind === PriceListKind::Campaign && $channel !== '')) {
             return PriceChannel::from($channel);

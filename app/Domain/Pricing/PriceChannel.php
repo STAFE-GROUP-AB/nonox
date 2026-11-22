@@ -17,6 +17,21 @@ enum PriceChannel: string
     case Recurring = 'RECURRING';
     case WorkOrder = 'WORK_ORDER';
 
+    /** The two choices a campaign has: the till, or every document (ADR-082 P11). */
+    public function campaignLabel(): string
+    {
+        return match ($this) {
+            self::Pos => __('Kassan'),
+            default => __('Fakturor, offerter och order'),
+        };
+    }
+
+    /** @return list<self> */
+    public static function campaignChoices(): array
+    {
+        return [self::Pos, self::Sales];
+    }
+
     public function label(): string
     {
         return match ($this) {

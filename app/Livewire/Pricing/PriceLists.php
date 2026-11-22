@@ -66,6 +66,18 @@ class PriceLists extends Component
         $this->openFormFromLink(PriceList::class);
     }
 
+    public function updatedFormKind(): void
+    {
+        $channel = (string) ($this->form['channel'] ?? '');
+        $kind = (string) ($this->form['kind'] ?? '');
+
+        if ($kind === PriceListKind::Campaign->value) {
+            $this->form['channel'] = $this->editingId !== null && in_array($channel, ['POS', 'SALES'], true) ? $channel : '';
+        } elseif ($kind === PriceListKind::Channel->value) {
+            $this->form['channel'] = in_array($channel, ['POS', 'PORTAL'], true) ? $channel : PriceChannel::Pos->value;
+        }
+    }
+
     public function updatedKind(): void
     {
         $this->resetPage();

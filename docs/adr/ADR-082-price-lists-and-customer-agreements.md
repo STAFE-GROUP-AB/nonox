@@ -964,12 +964,15 @@ reaches the till. The till sync and the labels count only campaigns without a
 channel or with POS. The campaign screen, the API (`channel` on a CAMPAIGN
 list) and the file import take the field.
 
-Built as follows. Any PriceChannel case is allowed on a campaign (SALES,
-PORTAL, POS, RECURRING, WORK_ORDER): the resolver already received the
-document's channel, so no case needed special handling, and `SavePriceList`
-only stopped forcing the channel to null for campaigns (empty means none; a
-channel list still needs POS or PORTAL). `PriceBook::bestCampaign` skips a
-campaign whose channel differs from `PriceContext::$channel`; it reads a
+Built as follows. A campaign has two channel choices besides none: POS (the
+till only) and SALES, which reaches every document channel except the till and
+the portal, i.e. SALES, RECURRING and WORK_ORDER. RECURRING- or
+WORK_ORDER-only campaigns are not offered, because a draft is re-priced under
+SALES in the invoice editor and would lose them, and PORTAL has no in-app
+consumer yet; `SavePriceList` refuses other channels on a campaign (a channel
+list still needs POS or PORTAL, empty means none). `PriceBook::bestCampaign`
+skips a campaign the document's channel (`PriceContext::$channel`) is not
+reached by; it reads a
 column already on the loaded list, so the query count is unchanged. The till
 sync and the labels price through `ChannelPrices`, which asks for the POS
 channel, so they take only campaigns without a channel or with POS without any

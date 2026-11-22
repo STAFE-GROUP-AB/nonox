@@ -21,11 +21,11 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 
 <!-- lang:sv -->
 ### Nytt
-- `channel` kan sättas på prislistor av typen `CAMPAIGN` (`SALES`, `PORTAL`, `POS`, `RECURRING` eller `WORK_ORDER`; utelämnat eller `null` betyder alla kanaler). En kampanj med kanal gäller bara när priset efterfrågas i den kanalen. Kanalprislistor kräver fortfarande `POS` eller `PORTAL`.
+- `channel` kan sättas på prislistor av typen `CAMPAIGN` (`POS` eller `SALES`; utelämnat eller `null` betyder alla kanaler). `POS` gäller bara kassan; `SALES` gäller alla dokument (`SALES`, `RECURRING` och `WORK_ORDER`) men inte kassan eller kundportalen. Andra värden ger `422`. Kanalprislistor kräver fortfarande `POS` eller `PORTAL`.
 <!-- /lang -->
 <!-- lang:en -->
 ### New
-- `channel` can be set on price lists of type `CAMPAIGN` (`SALES`, `PORTAL`, `POS`, `RECURRING` or `WORK_ORDER`; omitted or `null` means all channels). A campaign with a channel applies only when the price is asked for in that channel. Channel lists still require `POS` or `PORTAL`.
+- `channel` can be set on price lists of type `CAMPAIGN` (`POS` or `SALES`; omitted or `null` means all channels). `POS` applies only to the till; `SALES` applies to every document (`SALES`, `RECURRING` and `WORK_ORDER`) but not the till or the customer portal. Other values give `422`. Channel lists still require `POS` or `PORTAL`.
 <!-- /lang -->
 
 <!-- lang:sv -->

@@ -47,10 +47,12 @@ it('applies a campaign with a channel only in that channel, and one without a ch
     $request = [$scenario->request(['key' => 'r', 'article' => 'A1'])];
     $unit = fn (string $channel): int => $scenario->resolve(['date' => '2026-06-15', 'no_customer' => true, 'channel' => $channel], $request)['r']->unitPriceMinor;
 
+    // A SALES campaign reaches every document channel except the till and the portal.
     expect($unit('SALES'))->toBe(8000)
+        ->and($unit('RECURRING'))->toBe(8000)
+        ->and($unit('WORK_ORDER'))->toBe(8000)
         ->and($unit('POS'))->toBe(7000)
-        ->and($unit('PORTAL'))->toBe(9000)
-        ->and($unit('RECURRING'))->toBe(9000);
+        ->and($unit('PORTAL'))->toBe(9000);
 });
 
 it('does not let a till campaign reach a sales document', function () {
@@ -117,6 +119,24 @@ describe('saving', function () {
             ->and(($this->save)(['code' => 'K2'])->channel)->toBeNull();
     });
 
+    it('refuses a campaign channel other than the till and documents', function () {
+        foreach (['PORTAL', 'RECURRING', 'WORK_ORDER'] as $channel) {
+            expect(fn () => ($this->save)(['code' => "K{$channel}", 'channel' => $channel]))->toThrow(ValidationException::class);
+        }
+    });
+
+    it('sets the channel from the type chosen in the form, whatever the list filter says', function () {
+        $form = Livewire::test(PriceLists::class)->call('create')->assertSet('form.channel', 'POS');
+
+        $form->set('form.kind', 'CAMPAIGN')->assertSet('form.channel', '')
+            ->set('form.code', 'FILT')->set('form.name', 'Filterkampanj')->set('form.valid_from', '2026-06-01')->set('form.valid_to', '2026-06-30')
+            ->call('save')->assertHasNoErrors();
+
+        expect(PriceList::query()->where('code', 'FILT')->firstOrFail()->channel)->toBeNull();
+
+        Livewire::test(PriceLists::class)->set('kind', 'CAMPAIGN')->call('create')->set('form.kind', 'CHANNEL')->assertSet('form.channel', 'POS');
+    });
+
     it('refuses an unknown channel and still ignores a channel on a standard list', function () {
         expect(fn () => ($this->save)(['channel' => 'MOON']))->toThrow(ValidationException::class);
         expect(($this->save)(['code' => 'S', 'kind' => 'STANDARD', 'valid_from' => null, 'valid_to' => null, 'channel' => 'POS'])->channel)->toBeNull();
@@ -133,7 +153,7 @@ describe('saving', function () {
             ->call('create')
             ->assertSet('form.channel', '')
             ->assertSee('Alla kanaler')
-            ->assertSee('Fakturor och offerter')
+            ->assertSee('Fakturor, offerter och order')
             ->set('form.code', 'KASSA')
             ->set('form.name', 'Kassakampanj')
             ->set('form.valid_from', '2026-06-01')

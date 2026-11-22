@@ -51,8 +51,8 @@
                     <x-ui.field for="list_campaign_channel" :label="__('Kanal')" error="channel" class="sm:col-span-3">
                         <select id="list_campaign_channel" class="{{ $input }} mt-1" wire:model="form.channel">
                             <option value="">{{ __('Alla kanaler') }}</option>
-                            @foreach(App\Domain\Pricing\PriceChannel::cases() as $channel)
-                                <option value="{{ $channel->value }}">{{ $channel->label() }}</option>
+                            @foreach(App\Domain\Pricing\PriceChannel::campaignChoices() as $channel)
+                                <option value="{{ $channel->value }}">{{ $channel->campaignLabel() }}</option>
                             @endforeach
                         </select>
                     </x-ui.field>
@@ -181,7 +181,7 @@
                                             {{ $list->priceGroups->isEmpty() ? __('För alla kunder') : __('För :groups', ['groups' => $list->priceGroups->pluck('name')->implode(', ')]) }}
                                         @endif
                                         @if($list->channel)
-                                            {{ $list->channel->label() }}
+                                            @if($list->kind === App\Domain\Pricing\PriceListKind::Campaign || $list->derived_percent_bp !== null) · @endif{{ $list->kind === App\Domain\Pricing\PriceListKind::Campaign ? $list->channel->campaignLabel() : $list->channel->label() }}
                                         @endif
                                     </span>
                                 </td>
