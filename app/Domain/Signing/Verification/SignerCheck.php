@@ -16,7 +16,11 @@ enum SignerCheck: string
     case None = 'NONE';
     case EmailCode = 'EMAIL_CODE';
     case AccessCode = 'ACCESS_CODE';
-    /** A pluggable provider (gap 12, S17). Not offered yet. */
+    /**
+     * Signing at an external provider (gap 12, S17): the signer identifies themselves and signs there with their own
+     * certificate. Not a check before the document (the document is shown after the link and the consent, as with
+     * NONE); the signature itself is the provider's. Chosen per signer with the provider's id (SendForSigning).
+     */
     case Provider = 'PROVIDER';
 
     /**
@@ -29,9 +33,10 @@ enum SignerCheck: string
         return [self::None, self::EmailCode, self::AccessCode];
     }
 
+    /** Whether a check must pass before the document is shown (an e-mail code or an access code). */
     public function required(): bool
     {
-        return $this !== self::None;
+        return $this === self::EmailCode || $this === self::AccessCode;
     }
 
     public function label(): string
@@ -40,7 +45,7 @@ enum SignerCheck: string
             self::None => __('Ingen kontroll, bara länken'),
             self::EmailCode => __('Kod till e-posten'),
             self::AccessCode => __('Åtkomstkod som du lämnar själv'),
-            self::Provider => __('Extern tjänst'),
+            self::Provider => __('Underskrift hos extern tjänst'),
         };
     }
 
@@ -51,7 +56,7 @@ enum SignerCheck: string
             self::None => __('Ingen kontroll utöver länken'),
             self::EmailCode => __('Engångskod till e-postadressen'),
             self::AccessCode => __('Åtkomstkod från avsändaren'),
-            self::Provider => __('Extern tjänst'),
+            self::Provider => __('Underskrift hos extern tjänst för underskrift'),
         };
     }
 }

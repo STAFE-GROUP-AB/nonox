@@ -7,6 +7,8 @@ namespace App\Actions\Signing;
 use App\Domain\Signing\Chain\SigningChain;
 use App\Domain\Signing\EnvelopeStatus;
 use App\Domain\Signing\Fields\FillSigningFields;
+use App\Domain\Signing\Providers\ProviderSignatures;
+use App\Domain\Signing\Providers\ProviderSigned;
 use App\Domain\Signing\Seal\EnvelopeSealer;
 use App\Domain\Signing\Signable;
 use App\Domain\Signing\SignatureImage;
@@ -17,6 +19,7 @@ use App\Domain\Signing\SigningPdfs;
 use App\Domain\Signing\SigningStatus;
 use App\Domain\Signing\SigningToken;
 use App\Domain\Signing\SigningUnavailable;
+use App\Domain\Signing\Verification\SignerCheck;
 use App\Events\QuoteSigned;
 use App\Jobs\FollowUpSigning;
 use App\Mail\SigningEnvelopeMail;
@@ -37,6 +40,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use LogicException;
 use Throwable;
 
 /**
@@ -67,6 +71,7 @@ final class SignAtLink
         private readonly SigningEnvelopes $envelopes,
         private readonly SigningChain $chain,
         private readonly FillSigningFields $fields,
+        private readonly ProviderSignatures $providerSignatures,
     ) {}
 
     /** The request behind a token, in any company, or null. */
@@ -203,11 +208,36 @@ final class SignAtLink
      * @param  array<string, mixed>  $input  name, title, accept, method (DRAWN|TYPED), signature (PNG data URL), typed_signature, document_sha256;
      *                                       for an envelope with fields (ADR-046 S6) also fields (id => value), radio (group => id),
      *                                       initials_method, initials, typed_initials and revision_sha256 (the version shown)
+     * @param  ?ProviderSigned  $provider  for a PROVIDER signer (ADR-046 S17): the file with their own signature from the provider run; required for them, refused for anyone else
      *
      * @throws SigningUnavailable when the link cannot be used (any more)
      * @throws ValidationException
      */
-    public function sign(SigningRequest $request, array $input, ?string $ip, ?string $userAgent): SigningRequest
+    public function sign(SigningRequest $request, array $input, ?string $ip, ?string $userAgent, ?ProviderSigned $provider = null): SigningRequest
+    {
+        [$validated, $name, $image] = $this->validateForm($input);
+
+        // The signed request, and whether it completed its envelope.
+        $result = CurrentCompany::run($request->company_id, fn (): array => DB::transaction(function () use ($request, $input, $validated, $name, $image, $ip, $userAgent, $provider): array {
+            // The document first, then the request: the order every signing path takes (SignInSession, SendForSigning).
+            $request->document(lock: true);
+            $locked = $this->lockUsable($request);
+
+            return $this->signLocked($locked, $input, $validated, $name, $image, $ip, $userAgent, $provider);
+        }, self::ATTEMPTS));
+
+        return $this->afterSigning($result);
+    }
+
+    /**
+     * The signing form, checked before any lock: the name, the confirmation, and the drawn or typed signature.
+     *
+     * @param  array<string, mixed>  $input
+     * @return array{0: array<string, mixed>, 1: string, 2: ?string} the validated form, the name and the drawn signature (base64 PNG)
+     *
+     * @throws ValidationException
+     */
+    public function validateForm(array $input): array
     {
         $validated = Validator::make($input, [
             'name' => ['required', 'string', 'max:120', 'regex:/^[^\p{C}]+$/u'],
@@ -234,88 +264,130 @@ final class SignAtLink
             throw ValidationException::withMessages(['typed_signature' => __('Skriv ditt namn exakt som i namnfältet för att skriva under.')]);
         }
 
-        // The signed request, and whether it completed its envelope.
-        $result = CurrentCompany::run($request->company_id, fn (): array => DB::transaction(function () use ($request, $input, $validated, $name, $image, $ip, $userAgent): array {
-            // The document first, then the request: the order every signing path takes (SignInSession, SendForSigning).
-            $request->document(lock: true);
-            $locked = $this->lockUsable($request);
+        return [$validated, $name, $image];
+    }
 
-            // The signer accepted the consent to electronic records before the document was shown (ADR-046 S4), whatever path calls this.
-            if ($locked->consent_at === null) {
-                throw ValidationException::withMessages(['consent' => __('Godkänn först att handlingen skrivs under elektroniskt. Ladda om sidan.')]);
+    /**
+     * What must hold, under the signer's row lock, before a signature is saved: the consent, the confirmation the
+     * page showed, the exact PDF and a document that still says what it said when it was sent. Also run before a
+     * signer is sent to a provider (ADR-046 S17), so nothing is started for a form that would be refused.
+     *
+     * @param  array<string, mixed>  $validated  from validateForm()
+     *
+     * @throws SigningUnavailable
+     * @throws ValidationException
+     */
+    public function checkLocked(SigningRequest $locked, array $validated): void
+    {
+        // The signer accepted the consent to electronic records before the document was shown (ADR-046 S4), whatever path calls this.
+        if ($locked->consent_at === null) {
+            throw ValidationException::withMessages(['consent' => __('Godkänn först att handlingen skrivs under elektroniskt. Ladda om sidan.')]);
+        }
+
+        // The confirmation stored is the one the page showed; its MAC proves the page made it.
+        if (! hash_equals(SigningPdfs::acceptanceMac($locked, (string) $validated['acceptance_text']), (string) $validated['acceptance_mac'])) {
+            throw ValidationException::withMessages(['accept' => __('Sidan är för gammal. Ladda om den och signera igen.')]);
+        }
+
+        if (! hash_equals($locked->document_sha256, strtolower((string) $validated['document_sha256']))) {
+            throw ValidationException::withMessages(['document_sha256' => __('Dokumentet har ändrats sedan sidan öppnades. Ladda om sidan och läs det igen.')]);
+        }
+
+        $bytes = Storage::disk(SigningRequest::DISK)->get($locked->document_path);
+
+        if (! is_string($bytes) || ! hash_equals($locked->document_sha256, hash('sha256', $bytes))) {
+            throw new SigningUnavailable(SigningUnavailable::GONE);
+        }
+
+        $this->checkDocument($locked);
+    }
+
+    /**
+     * The signature itself, inside the transaction and under the locks of sign().
+     *
+     * @param  array<string, mixed>  $input
+     * @param  array<string, mixed>  $validated
+     * @return array{0: SigningRequest, 1: bool} the signed request, and whether it completed its envelope
+     */
+    private function signLocked(SigningRequest $locked, array $input, array $validated, string $name, ?string $image, ?string $ip, ?string $userAgent, ?ProviderSigned $provider): array
+    {
+        $this->checkLocked($locked, $validated);
+
+        if ($locked->verification === SignerCheck::Provider) {
+            // A signer sent to an external provider (ADR-046 S17) signs only with the provider's signature: their
+            // revision is the file the provider run produced, stored here while the row is still pending.
+            if (! $provider instanceof ProviderSigned) {
+                throw ValidationException::withMessages(['provider' => __('Den här handlingen skrivs under hos en extern tjänst för underskrift. Ladda om sidan och välj att skriva under där.')]);
             }
 
-            // The confirmation stored is the one the page showed; its MAC proves the page made it.
-            if (! hash_equals(SigningPdfs::acceptanceMac($locked, (string) $validated['acceptance_text']), (string) $validated['acceptance_mac'])) {
-                throw ValidationException::withMessages(['accept' => __('Sidan är för gammal. Ladda om den och signera igen.')]);
+            $this->providerSignatures->store($locked, $provider);
+        } else {
+            if ($provider !== null) {
+                throw new LogicException('Only a PROVIDER signer signs with a provider signature (ADR-046 S17).');
             }
-
-            if (! hash_equals($locked->document_sha256, strtolower((string) $validated['document_sha256']))) {
-                throw ValidationException::withMessages(['document_sha256' => __('Dokumentet har ändrats sedan sidan öppnades. Ladda om sidan och läs det igen.')]);
-            }
-
-            $bytes = Storage::disk(SigningRequest::DISK)->get($locked->document_path);
-
-            if (! is_string($bytes) || ! hash_equals($locked->document_sha256, hash('sha256', $bytes))) {
-                throw new SigningUnavailable(SigningUnavailable::GONE);
-            }
-
-            $this->checkDocument($locked);
 
             // The signer's fields (ADR-046 S6), while the row is still pending: checked, stamped as a new revision, stored and chained.
             ($this->fields)($locked, $input, $name, ['method' => (string) $validated['method'], 'image' => $image]);
+        }
 
-            $locked->forceFill([
-                'status' => SigningStatus::Signed,
-                'acceptance_text' => (string) $validated['acceptance_text'],
-                'signer_name' => $name,
-                'signer_title' => blank($validated['title'] ?? null) ? null : trim((string) $validated['title']),
-                'signature_method' => $validated['method'],
-                'signature_image' => $image,
-                'signed_at' => now(),
-                'signer_ip' => $ip === null ? null : mb_substr($ip, 0, 45),
-                'signer_user_agent' => $userAgent === null ? null : mb_substr($userAgent, 0, 500),
-            ])->save();
+        $locked->forceFill([
+            'status' => SigningStatus::Signed,
+            'acceptance_text' => (string) $validated['acceptance_text'],
+            'signer_name' => $name,
+            'signer_title' => blank($validated['title'] ?? null) ? null : trim((string) $validated['title']),
+            'signature_method' => $validated['method'],
+            'signature_image' => $image,
+            'signed_at' => now(),
+            'signer_ip' => $ip === null ? null : mb_substr($ip, 0, 45),
+            'signer_user_agent' => $userAgent === null ? null : mb_substr($userAgent, 0, 500),
+        ])->save();
 
-            $this->chain->record($locked, SigningEventType::Signed, null, $locked->signer_ip, $locked->signer_user_agent, SigningChain::evidence($locked));
+        $this->chain->record($locked, SigningEventType::Signed, null, $locked->signer_ip, $locked->signer_user_agent, SigningChain::evidence($locked));
 
-            $certificate = SigningPdfs::certificate($locked->refresh());
-            $path = dirname($locked->document_path).'/'.pathinfo($locked->document_path, PATHINFO_FILENAME).'-signeringsbevis.pdf';
+        $certificate = SigningPdfs::certificate($locked->refresh());
+        $path = dirname($locked->document_path).'/'.pathinfo($locked->document_path, PATHINFO_FILENAME).'-signeringsbevis.pdf';
 
-            // Every signer of an envelope shares the document's path: a second signer's certificate gets a name of its
-            // own instead of overwriting the first one's (found in ADR-046 S6; signing:verify reported FILE_CHANGED).
-            if (Storage::disk(SigningRequest::DISK)->exists($path)) {
-                $path = dirname($locked->document_path).'/'.pathinfo($locked->document_path, PATHINFO_FILENAME)."-{$locked->id}-signeringsbevis.pdf";
-            }
+        // Every signer of an envelope shares the document's path: a second signer's certificate gets a name of its
+        // own instead of overwriting the first one's (found in ADR-046 S6; signing:verify reported FILE_CHANGED).
+        if (Storage::disk(SigningRequest::DISK)->exists($path)) {
+            $path = dirname($locked->document_path).'/'.pathinfo($locked->document_path, PATHINFO_FILENAME)."-{$locked->id}-signeringsbevis.pdf";
+        }
 
-            Storage::disk(SigningRequest::DISK)->put($path, $certificate);
-            // A later refusal (the document's markSigned) rolls the signature back: the certificate goes with it.
-            DB::afterRollBack(fn () => Storage::disk(SigningRequest::DISK)->delete($path));
-            $locked->forceFill(['signed_document_path' => $path, 'signed_document_sha256' => hash('sha256', $certificate)])->save();
+        Storage::disk(SigningRequest::DISK)->put($path, $certificate);
+        // A later refusal (the document's markSigned) rolls the signature back: the certificate goes with it.
+        DB::afterRollBack(fn () => Storage::disk(SigningRequest::DISK)->delete($path));
+        $locked->forceFill(['signed_document_path' => $path, 'signed_document_sha256' => hash('sha256', $certificate)])->save();
 
-            // The envelope: complete, or open the next step. The document is signed only when everyone has signed.
-            $outcome = $this->envelopes->signed($locked);
+        // The envelope: complete, or open the next step. The document is signed only when everyone has signed.
+        $outcome = $this->envelopes->signed($locked);
 
-            if ($outcome['completed']) {
-                $locked->document()?->markSigned($locked->signed_at ?? CarbonImmutable::now(), $locked->document_sha256);
-            }
+        if ($outcome['completed']) {
+            $locked->document()?->markSigned($locked->signed_at ?? CarbonImmutable::now(), $locked->document_sha256);
+        }
 
-            Audit::record('crm.signing_signed', $locked, ['signing_request_id' => $locked->id, 'document_type' => $locked->document_type, 'sales_document_id' => $locked->sales_document_id, 'agreement_id' => $locked->agreement_id, 'method' => $locked->signature_method], $locked->company_id);
+        Audit::record('crm.signing_signed', $locked, ['signing_request_id' => $locked->id, 'document_type' => $locked->document_type, 'sales_document_id' => $locked->sales_document_id, 'agreement_id' => $locked->agreement_id, 'method' => $locked->signature_method], $locked->company_id);
 
-            if ($outcome['completed'] && $locked->isQuote()) {
-                event(new QuoteSigned($locked->company_id, $locked->id));
-            }
+        if ($outcome['completed'] && $locked->isQuote()) {
+            event(new QuoteSigned($locked->company_id, $locked->id));
+        }
 
-            $this->mailOpenedStep($locked->company_id, $outcome['opened']);
+        $this->mailOpenedStep($locked->company_id, $outcome['opened']);
 
-            if ($outcome['completed'] && $outcome['envelope'] instanceof SigningEnvelope) {
-                // One signer with copy recipients (the wizard of ADR-046 S7): the copies go, the signer's own copy goes below.
-                SigningFollowUp::mailEnvelopeCopies($outcome['envelope'], toSigners: $outcome['several']);
-            }
+        if ($outcome['completed'] && $outcome['envelope'] instanceof SigningEnvelope) {
+            // One signer with copy recipients (the wizard of ADR-046 S7): the copies go, the signer's own copy goes below.
+            SigningFollowUp::mailEnvelopeCopies($outcome['envelope'], toSigners: $outcome['several']);
+        }
 
-            return [$locked, $outcome['completed']];
-        }, self::ATTEMPTS));
+        return [$locked, $outcome['completed']];
+    }
 
+    /**
+     * After the signing transaction has committed.
+     *
+     * @param  array{0: SigningRequest, 1: bool}  $result
+     */
+    private function afterSigning(array $result): SigningRequest
+    {
         [$signed, $completed] = $result;
 
         // The signature is saved. The signer's copy goes whatever happens to the order, and with a sync queue a failing

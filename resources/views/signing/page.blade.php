@@ -144,7 +144,17 @@
                 </div>
             @endif
 
-            <form id="signera-formular" method="POST" action="{{ route('signing.sign', ['token' => $token]) }}" class="mt-4 space-y-5" data-signing-form
+            @if($provider ?? null)
+                <div class="mt-3 rounded-lg bg-stone-50 p-3 text-sm text-gray-700 ring-1 ring-stone-200" data-testid="signing-provider-note">
+                    <p>{{ __('Du skriver under hos :provider med ditt eget certifikat. Fyll i formuläret och fortsätt, så skickas du dit och sedan tillbaka hit.', ['provider' => $provider['name']]) }}</p>
+                    <p class="mt-1">{{ __('Dokumentkod:') }} <span class="font-mono font-semibold tracking-wider text-gray-900" data-testid="signing-document-code">{{ $provider['code'] }}</span>. {{ __('Visar tjänsten en dokumentkod ska den vara samma som här. Är den inte det, skriv inte under och kontakta avsändaren.') }}</p>
+                </div>
+            @endif
+
+            @if(($provider ?? null) && ! $provider['usable'])
+                <p role="alert" class="mt-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">{{ __('Underskrift hos :provider går inte att använda just nu. Kontakta avsändaren.', ['provider' => $provider['name']]) }}</p>
+            @else
+            <form id="signera-formular" method="POST" action="{{ ($provider ?? null) ? route('signing.provider.start', ['token' => $token]) : route('signing.sign', ['token' => $token]) }}" class="mt-4 space-y-5" data-signing-form
                 data-empty-text="{{ __('Rita din namnteckning i rutan, eller välj att skriva ditt namn.') }}"
                 data-typed-text="{{ __('Skriv ditt namn exakt som i namnfältet för att skriva under.') }}"
                 data-drawn-text="{{ __('Namnteckningen är ritad.') }}"
@@ -226,10 +236,11 @@
                     <span>{{ $acceptance }}</span>
                 </label>
 
-                <p class="text-xs text-gray-600">{{ __('När du signerar sparas ditt namn, din titel, din namnteckning, tidpunkten, din IP-adress och din webbläsare som bevis på att avtalet ingicks, tillsammans med dokumentets kontrollsumma. Personuppgiftsansvarig är :controller. Uppgifterna behandlas för att ingå avtalet och kunna visa att det ingicks (artikel 6.1 b och f i dataskyddsförordningen) och sparas så länge avtalet och bokföringslagen kräver, normalt sju år. NONOX behandlar dem för :company:s räkning. Du har rätt att begära tillgång, rättelse och i vissa fall radering eller begränsning, och att klaga hos Integritetsskyddsmyndigheten (IMY). Du får en kopia med e-post.', ['company' => $companyName, 'controller' => $controller]) }} {{ __('Har avsändaren slagit på kontrollsidan kan den som har en kopia av det signerade dokumentet se på en öppen sida att filen är oförändrad, med avsändarens namn, hur många som har signerat och hur de kontrollerades, när alla hade signerat och om filen är förseglad, men aldrig namn, e-postadresser eller IP-adresser.') }}@if($several ?? false) {{ __('Fler än du signerar dokumentet. När alla har signerat får de andra undertecknarna och de kopiemottagare som avsändaren har valt dokumentet och en sammanställning med ditt namn, din titel och tidpunkten, men inte din namnteckning, IP-adress, webbläsare eller e-postadress.') }}@endif</p>
+                <p class="text-xs text-gray-600">{{ __('När du signerar sparas ditt namn, din titel, din namnteckning, tidpunkten, din IP-adress och din webbläsare som bevis på att avtalet ingicks, tillsammans med dokumentets kontrollsumma. Personuppgiftsansvarig är :controller. Uppgifterna behandlas för att ingå avtalet och kunna visa att det ingicks (artikel 6.1 b och f i dataskyddsförordningen) och sparas så länge avtalet och bokföringslagen kräver, normalt sju år. NONOX behandlar dem för :company:s räkning. Du har rätt att begära tillgång, rättelse och i vissa fall radering eller begränsning, och att klaga hos Integritetsskyddsmyndigheten (IMY). Du får en kopia med e-post.', ['company' => $companyName, 'controller' => $controller]) }} {{ __('Har avsändaren slagit på kontrollsidan kan den som har en kopia av det signerade dokumentet se på en öppen sida att filen är oförändrad, med avsändarens namn, hur många som har signerat och hur de kontrollerades, när alla hade signerat och om filen är förseglad, men aldrig namn, e-postadresser eller IP-adresser.') }}@if($provider ?? null) {{ __('Du loggar in och skriver under hos :provider. Hur tjänsten behandlar dina uppgifter står i tjänstens villkor och integritetspolicy; fråga :company om du vill veta mer. NONOX skickar bara en kontrollsumma som räknats fram ur dokumentet dit, aldrig dokumentet självt. Ditt certifikat läggs in i den signerade PDF:en, som alla undertecknare och kopiemottagare får. Certifikatet innehåller de uppgifter tjänsten har lagt i det, ofta ditt namn och ditt personnummer. NONOX sparar certifikatets namn, utfärdare, serienummer och giltighetstid som bevis, men inte personnumret utanför PDF:en.', ['provider' => $provider['name'], 'company' => $companyName]) }}@endif @if($several ?? false) {{ ($provider ?? null) ? __('Fler än du signerar dokumentet. När alla har signerat får de andra undertecknarna och de kopiemottagare som avsändaren har valt dokumentet och en sammanställning med ditt namn, din titel och tidpunkten, men inte din namnteckning, IP-adress, webbläsare eller e-postadress, och ditt certifikat finns i den signerade PDF:en.') : __('Fler än du signerar dokumentet. När alla har signerat får de andra undertecknarna och de kopiemottagare som avsändaren har valt dokumentet och en sammanställning med ditt namn, din titel och tidpunkten, men inte din namnteckning, IP-adress, webbläsare eller e-postadress.') }}@endif</p>
 
-                <button type="submit" data-signing-submit class="inline-flex min-h-12 w-full items-center justify-center rounded-lg px-5 text-base font-semibold text-white sm:w-auto" style="background: {{ $color }}">{{ __('Signera') }}</button>
+                <button type="submit" data-signing-submit class="inline-flex min-h-12 w-full items-center justify-center rounded-lg px-5 text-base font-semibold text-white sm:w-auto" style="background: {{ $color }}">{{ ($provider ?? null) ? __('Fortsätt till :provider', ['provider' => $provider['name']]) : __('Signera') }}</button>
             </form>
+            @endif
         </section>
 
         <details class="mt-6 rounded-2xl bg-white p-5 shadow-xs ring-1 ring-stone-200 sm:p-6">
@@ -243,7 +254,7 @@
             </form>
         </details>
 
-        <p class="mt-8 text-center text-xs text-gray-600">{{ __('Skickat av :company med NONOX. En enkel elektronisk underskrift.', ['company' => $companyName]) }}</p>
+        <p class="mt-8 text-center text-xs text-gray-600">{{ ($provider ?? null) ? __('Skickat av :company med NONOX. Underskriften görs hos :provider.', ['company' => $companyName, 'provider' => $provider['name']]) : __('Skickat av :company med NONOX. En enkel elektronisk underskrift.', ['company' => $companyName]) }}</p>
     </main>
 </body>
 </html>

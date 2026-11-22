@@ -51,4 +51,5 @@ Ett system utanför NONOX kan ladda upp en PDF, skicka den för signering, påmi
 - [Bevarande och radering av signeringar](/manual/signering/bevarande-och-radering)
 - [Försegling av signerade dokument](/manual/signering/forsegling)
 - [Kontrollera att ett signerat dokument är oförändrat](/manual/signering/kontrollera)
+- [Underskrift hos extern tjänst](/manual/signering/extern-tjanst)
 - [Signera offerter och avtal](/manual/crm/signering)

@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Domain\Signing\Pdf\ExternalSignatureRequest;
 use App\Domain\Signing\Pdf\PdfEngineException;
 use App\Domain\Signing\Pdf\PdfEngineFailure;
 use App\Domain\Signing\Pdf\PdfLimits;
 use App\Domain\Signing\Pdf\PdfRefusal;
+use App\Domain\Signing\Pdf\PreparedSignature;
 use App\Domain\Signing\Pdf\SealLevel;
 use App\Domain\Signing\Pdf\SealRequest;
 use App\Domain\Signing\Pdf\SidecarPdfEngine;
@@ -450,3 +452,68 @@ it('answers certificate_revoked, not "unavailable", for a revoked certificate, a
     'not revoked' => ['good', true, null],
     'revoked' => ['revoked', false, 'certificate_revoked'],
 ]);
+
+/** @return array{0: OpenSSLAsymmetricKey, 1: string} an RSA key and its self-signed certificate (DER) for an external signature (ADR-046 S17) */
+function s17RsaSigner(): array
+{
+    $key = openssl_pkey_new(['private_key_type' => OPENSSL_KEYTYPE_RSA, 'private_key_bits' => 2048]);
+    assert($key !== false);
+    $csr = openssl_csr_new(['commonName' => 'Test Testsson'], $key, ['digest_alg' => 'sha256']);
+    assert($csr !== false && $csr !== true);
+    $certificate = openssl_csr_sign($csr, null, $key, 1, ['digest_alg' => 'sha256']);
+    assert($certificate !== false);
+    openssl_x509_export($certificate, $pem);
+
+    return [$key, (string) base64_decode((string) preg_replace('/-----[^-]+-----|\s+/', '', (string) $pem), true)];
+}
+
+/** PKCS#1 v1.5 over a SHA-256 DigestInfo, as a CSC service signs a hash with rsaEncryption. */
+function s17SignDigest(OpenSSLAsymmetricKey $key, string $digest): string
+{
+    openssl_private_encrypt("\x30\x31\x30\x0d\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x01\x05\x00\x04\x20".$digest, $signature, $key, OPENSSL_PKCS1_PADDING);
+
+    return (string) $signature;
+}
+
+it('makes an external PAdES signature in two steps, with the provider\'s value over the prepared digest (ADR-046 S17)', function () {
+    $engine = s5RealEngine($this);
+    $bytes = PdfEngineFixtures::pdf(1);
+    $path = PdfEngineFixtures::write($this->pdfDir, 'shown.pdf', $bytes);
+    [$key, $certificate] = s17RsaSigner();
+    $request = new ExternalSignatureRequest([$certificate], 'sha256_rsa', 'NonoxSigner7', 'Signerad / Signed');
+
+    $prepared = $engine->prepareExternalSignature($path, $this->pdfDir.'/prepared.pdf', $request);
+
+    expect(strlen($prepared->digest))->toBe(32)
+        ->and($prepared->certificateSha256)->toBe(hash('sha256', $certificate))
+        ->and(str_starts_with((string) file_get_contents($prepared->path), $bytes))->toBeTrue();
+
+    // What the run stores between the two steps is enough to finish.
+    $stored = PreparedSignature::fromArray($prepared->path, $prepared->toArray());
+    $signed = $engine->finishExternalSignature($path, $stored, $request, s17SignDigest($key, $stored->digest), $this->pdfDir.'/signed.pdf');
+    $report = $engine->validate($signed->path);
+
+    expect(str_starts_with((string) file_get_contents($signed->path), $bytes))->toBeTrue()
+        ->and($report->signatures)->toHaveCount(1)
+        ->and($report->signatures[0]['field'])->toBe('NonoxSigner7')
+        ->and($report->signatures[0]['intact'])->toBeTrue()
+        ->and($report->signatures[0]['valid'])->toBeTrue()
+        ->and($report->signatures[0]['certificate_sha256'])->toBe(hash('sha256', $certificate));
+});
+
+it('refuses an external signature value that is not over the prepared digest, and a changed prepared file (ADR-046 S17)', function () {
+    $engine = s5RealEngine($this);
+    $path = PdfEngineFixtures::write($this->pdfDir, 'shown.pdf', PdfEngineFixtures::pdf(1));
+    [$key, $certificate] = s17RsaSigner();
+    $request = new ExternalSignatureRequest([$certificate], 'sha256_rsa', 'NonoxSigner8');
+    $prepared = $engine->prepareExternalSignature($path, $this->pdfDir.'/prepared.pdf', $request);
+
+    expect(fn () => $engine->finishExternalSignature($path, $prepared, $request, s17SignDigest($key, hash('sha256', 'annat', true)), $this->pdfDir.'/signed.pdf'))
+        ->toThrow(fn (PdfEngineException $e) => expect($e->failure)->toBe(PdfEngineFailure::SignatureInvalid));
+    expect(file_exists($this->pdfDir.'/signed.pdf'))->toBeFalse();
+
+    file_put_contents($prepared->path, "\n% ändrad\n", FILE_APPEND);
+
+    expect(fn () => $engine->finishExternalSignature($path, $prepared, $request, s17SignDigest($key, $prepared->digest), $this->pdfDir.'/signed2.pdf'))
+        ->toThrow(fn (PdfEngineException $e) => expect($e->failure)->toBe(PdfEngineFailure::NotIncremental));
+});

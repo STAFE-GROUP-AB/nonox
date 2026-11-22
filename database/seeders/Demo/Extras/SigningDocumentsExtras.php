@@ -12,6 +12,7 @@ use App\Domain\Signing\Seal\SelfSignedSeal;
 use App\Domain\Signing\SigningConsent;
 use App\Domain\Signing\SigningPdfs;
 use App\Models\SigningEnvelope;
+use App\Models\SigningProvider;
 use App\Models\SigningRequest;
 use App\Modules\ModuleManager;
 use App\Modules\Signing\Actions\ManageSigningBulkSends;
@@ -76,6 +77,7 @@ final class SigningDocumentsExtras extends DemoExtra
 
                 $this->finishedBulkSend($c, $template, [$signedEnvelope, $leaseEnvelope, $employmentEnvelope]);
                 $this->sealCertificate($c);
+                $this->signingProvider($c);
             });
         });
     }
@@ -90,6 +92,28 @@ final class SigningDocumentsExtras extends DemoExtra
         $seal = SelfSignedSeal::make((string) ($c->company->legal_name ?: $c->company->name).' – försegling', (string) ($c->company->legal_name ?: $c->company->name), 730, $password);
 
         app(ManageSealCertificates::class)->upload($c->user, $c->company, $seal['pkcs12'], $password);
+    }
+
+    /**
+     * A signing service with the CSC API v2 (ADR-046 S17), for the manual's image of its settings: made directly,
+     * since adding one through the app asks the service first, and the demo has no network. Made-up address and
+     * client id, a random secret that is thrown away; external signing itself stays off in the demo.
+     */
+    private function signingProvider(DemoContext $c): void
+    {
+        SigningProvider::create([
+            'company_id' => $c->company->id,
+            'driver' => 'csc',
+            'name' => 'Exempeltjänsten',
+            'base_url' => 'https://underskrift.example/csc/v2',
+            'oauth_url' => 'https://underskrift.example/oauth',
+            'client_id' => 'exempel-klient',
+            'client_secret' => bin2hex(random_bytes(16)),
+            'claimed_level' => 'QES',
+            'service_name' => 'Exempeltjänsten för underskrift',
+            'service_region' => 'SE',
+            'created_by' => $c->user->id,
+        ]);
     }
 
     /** Two templates (ADR-046 S14): one for the draft's kind of document, with two roles, and one for quotes. Roles and settings only, so the demo needs no PDF engine. */

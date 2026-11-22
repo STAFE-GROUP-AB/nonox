@@ -210,6 +210,9 @@
                                 @foreach($checks as $check)
                                     <option value="{{ $check->value }}">{{ $check->label() }}</option>
                                 @endforeach
+                                @foreach($providerChecks as $providerCheck)
+                                    <option value="{{ $providerCheck['value'] }}">{{ $providerCheck['label'] }}</option>
+                                @endforeach
                             </select>
                         </x-ui.field>
                         <x-ui.field for="wizard-language-{{ $index }}" :label="__('Språk i kopian efter signering')" error="signers.{{ $index }}.language">

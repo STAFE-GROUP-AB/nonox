@@ -155,6 +155,8 @@ final class SigningEnvelopeController
             'recipients.*.email' => ['required', 'string', 'email', 'max:255'],
             'recipients.*.language' => ['nullable', 'string', 'in:sv,en'],
             'recipients.*.access_code' => ['nullable', 'string', 'max:255'],
+            // Signing at an external provider (ADR-046 S17) is chosen in the app only; the API sends the three checks.
+            'signers.*.verification' => ['nullable', 'string', 'in:NONE,EMAIL_CODE,ACCESS_CODE'],
         ])->validate();
 
         $template = $this->template($body);

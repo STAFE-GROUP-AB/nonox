@@ -30,6 +30,9 @@
                                         @foreach($checks as $check)
                                             <option value="{{ $check->value }}">{{ $check->label() }}</option>
                                         @endforeach
+                                        @foreach($providerChecks as $providerCheck)
+                                            <option value="{{ $providerCheck['value'] }}">{{ $providerCheck['label'] }}</option>
+                                        @endforeach
                                     </select>
                                 </x-ui.field>
                                 @if(($signer['verification'] ?? 'NONE') === 'ACCESS_CODE')
@@ -138,6 +141,9 @@
                 <select id="signing-check" class="{{ $input }} mt-1" wire:model.live="verification">
                     @foreach($checks as $check)
                         <option value="{{ $check->value }}">{{ $check->label() }}</option>
+                    @endforeach
+                    @foreach($providerChecks as $providerCheck)
+                        <option value="{{ $providerCheck['value'] }}">{{ $providerCheck['label'] }}</option>
                     @endforeach
                 </select>
             </x-ui.field>

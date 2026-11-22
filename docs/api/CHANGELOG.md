@@ -29,6 +29,22 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 <!-- /lang -->
 
 <!-- lang:sv -->
+## 2026-11-22: underskrift hos extern tjänst (version 1.11.0)
+<!-- /lang -->
+<!-- lang:en -->
+## 2026-11-22: signing at an external service (version 1.11.0)
+<!-- /lang -->
+
+<!-- lang:sv -->
+### Nytt
+- En undertecknares `verification` kan nu vara `PROVIDER`: undertecknaren skriver under hos en extern tjänst för underskrift som företaget har lagt in i appen. Kontrollen väljs bara i appen; `POST /signing/envelopes` tar fortfarande emot `NONE`, `EMAIL_CODE` och `ACCESS_CODE`.
+<!-- /lang -->
+<!-- lang:en -->
+### Added
+- A recipient's `verification` can now be `PROVIDER`: the recipient signs at an external signing service the company has configured in the app. The check is chosen in the app only; `POST /signing/envelopes` still accepts `NONE`, `EMAIL_CODE` and `ACCESS_CODE`.
+<!-- /lang -->
+
+<!-- lang:sv -->
 ## 2026-11-22: signering (dokument, mallar, kuvert och webhooks)
 <!-- /lang -->
 <!-- lang:en -->

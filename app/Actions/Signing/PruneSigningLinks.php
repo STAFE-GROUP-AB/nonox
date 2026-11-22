@@ -16,6 +16,7 @@ use App\Models\SigningDownloadCode;
 use App\Models\SigningDownloadLink;
 use App\Models\SigningEnvelope;
 use App\Models\SigningEvent;
+use App\Models\SigningProviderSession;
 use App\Models\SigningRequest;
 use App\Modules\Signing\Actions\ManageSigningBulkSends;
 use App\Modules\Signing\Models\SigningBulkSend;
@@ -72,6 +73,27 @@ final class PruneSigningLinks
     }
 
     /**
+     * Provider runs (ADR-046 S17) that never finished: a day after they expired (or failed) they go, with any file
+     * prepared for them and still lying around. A finished run is evidence and goes only with its signer (trigger).
+     */
+    private function pruneProviderRuns(): void
+    {
+        $stale = SigningProviderSession::query()
+            ->where('step', '!=', SigningProviderSession::DONE)
+            ->where('expires_at', '<', CarbonImmutable::now()->subDay())
+            ->get(['id', 'company_id', 'step', 'prepared_path']);
+
+        if ($stale->isEmpty()) {
+            return;
+        }
+
+        $paths = $stale->pluck('prepared_path')->filter(fn (mixed $path): bool => is_string($path) && $path !== '')->values()->all();
+        SigningProviderSession::query()->whereKey($stale->modelKeys())->delete();
+
+        DB::afterCommit(fn () => Storage::disk(SigningRequest::DISK)->delete($paths));
+    }
+
+    /**
      * @return array{links: int, envelopes: int, documents: int} the unsigned links, the whole envelopes past their
      *                                                           retention and the never-sent documents deleted
      */
@@ -86,6 +108,7 @@ final class PruneSigningLinks
         }
 
         $this->pruneBulkSends($today);
+        $this->pruneProviderRuns();
 
         $envelopes = $this->pruneExpiredRetention($today);
         // A held envelope (bevarandespärr) keeps every row; the database refuses it too.

@@ -936,6 +936,8 @@ class SendWizard extends Component
             'isQuote' => $document instanceof SalesDocument,
             'standalone' => $document instanceof RestrictsEnvelopes || $first,
             'checks' => SignerCheck::choosable(),
+            // Signing at one of the company's external providers (ADR-046 S17), while it can be used.
+            'providerChecks' => SignerChecks::providerOptions(),
             'intervals' => SigningDeadlines::INTERVALS,
             'minDays' => SigningDeadlines::MIN_DAYS,
             'maxDays' => SigningDeadlines::MAX_DAYS,

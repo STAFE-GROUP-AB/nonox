@@ -320,6 +320,8 @@ class SigningPanel extends Component
             'maxCopies' => SigningEnvelope::MAX_COPIES,
             'maxStep' => SigningEnvelope::MAX_STEP,
             'checks' => SignerCheck::choosable(),
+            // Signing at one of the company's external providers (ADR-046 S17), while it can be used.
+            'providerChecks' => SignerChecks::providerOptions(),
             'intervals' => SigningDeadlines::INTERVALS,
             'minDays' => SigningDeadlines::MIN_DAYS,
             'maxDays' => SigningDeadlines::MAX_DAYS,

@@ -202,6 +202,8 @@ it('knows every column in the schema that holds a stored file path', function ()
             'signing_document_versions.path',
             // The sealed file of an envelope (ADR-046 S10), also a SEALED row above: written for one envelope, never linked as underlag.
             'signing_envelopes.sealed_path',
+            // A provider run's prepared file (ADR-046 S17): written for one run only, deleted when it ends, never linked as underlag.
+            'signing_provider_sessions.prepared_path',
             // The issued invoice PDF and portal attachments (ADR-075): each written for one row only and never linked as underlag.
             'invoice_documents.path',
             'customer_portal_attachments.path',

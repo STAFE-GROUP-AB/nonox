@@ -6,6 +6,7 @@ namespace App\Domain\Signing;
 
 use App\Domain\Signing\Pdf\PdfScripts;
 use App\Domain\Signing\Seal\SealCertificateInfo;
+use App\Domain\Signing\Verification\SignerCheck;
 use App\Models\Company;
 use App\Models\SigningDocumentVersion;
 use App\Models\SigningEnvelope;
@@ -38,7 +39,7 @@ final class SigningPdfs
     /** The signing certificate: what was signed (hash), by whom, how, when, from where, and the trail of events. */
     public static function certificate(SigningRequest $request): string
     {
-        $request->loadMissing(['events']);
+        $request->loadMissing($request->verification === SignerCheck::Provider ? ['events', 'providerSignature'] : ['events']);
         $company = Company::query()->findOrFail($request->company_id);
 
         return self::render(view('signing.certificate', [
