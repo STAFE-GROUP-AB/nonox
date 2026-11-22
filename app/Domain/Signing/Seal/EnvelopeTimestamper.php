@@ -182,7 +182,7 @@ final class EnvelopeTimestamper
     /** Whether a path on the signing disk has the shape newPath() gives (the sweep touches nothing else). */
     public static function isLongTermFile(string $path): bool
     {
-        return preg_match('#^crm-signing/\d+/ltv/[0-9a-f-]{36}/[0-9a-f-]{36}-tidsstampel\.pdf$#', $path) === 1;
+        return preg_match('#^crm-signing/\d+/ltv/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}-tidsstampel\.pdf$#', $path) === 1;
     }
 
     /** The envelope id in a long-term validation path, or null when it is not one. */
