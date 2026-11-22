@@ -10,10 +10,13 @@ use App\Domain\Invoicing\InvoiceStatus;
 use App\Models\Article;
 use App\Models\Customer;
 use App\Models\Invoice;
+use App\Models\PriceList;
+use App\Models\PriceListItem;
 use App\Models\RegisterImport;
 use App\Models\Supplier;
 use App\Models\SupplierInvoice;
 use App\Support\Files\PrivateFile;
+use Carbon\CarbonImmutable;
 use Generator;
 
 /**
@@ -59,6 +62,18 @@ final class RegisterImportEngine
     /** @var array<string, true> OCR numbers of the rows planned so far */
     private array $seenOcr = [];
 
+    /** @var array<string, array{id: int, currency: string, archived: bool}> price list code => list, for the price list kind */
+    private array $lists = [];
+
+    /** @var array<string, int> article number (lower case) => id, for the price list kind */
+    private array $articles = [];
+
+    /** @var array<string, string> codes of lists the file would create => currency */
+    private array $newLists = [];
+
+    /** @var array<string, list<array{from: ?string, to: ?string, price: ?int}>> "list|article|quantity" => the price periods there are, in the files so far and in the books */
+    private array $periods = [];
+
     private ?string $path = null;
 
     public function __construct(private readonly RegisterImport $import) {}
@@ -88,6 +103,12 @@ final class RegisterImportEngine
 
             if (isset($excluded[$line])) {
                 yield new RowPlan($line, RowPlan::EXCLUDED, $processed['values']);
+
+                continue;
+            }
+
+            if ($kind === RegisterKind::PriceLists) {
+                yield $this->priceRow($line, $processed);
 
                 continue;
             }
@@ -145,6 +166,83 @@ final class RegisterImportEngine
         return $fill === []
             ? new RowPlan($line, RowPlan::EXISTS, $values, [], $warnings, $id)
             : new RowPlan($line, RowPlan::FILL, $values, [], $warnings, $id, null, $fill);
+    }
+
+    /**
+     * One price of a price list (ADR-082, "Moving in"). The article must
+     * exist; the list is created when the code is new; a list that exists
+     * must have the file's currency and not be archived. A price from a
+     * later date ends the running price without end date, as "Nytt pris från
+     * datum" does; a price that would overlap any other is an error.
+     *
+     * @param  array{values: array<string, mixed>, errors: list<string>, warnings: list<string>, unmapped: array<string, string>}  $processed
+     */
+    private function priceRow(int $line, array $processed): RowPlan
+    {
+        ['values' => $values, 'errors' => $errors, 'warnings' => $warnings] = $processed;
+
+        if ($errors !== []) {
+            return new RowPlan($line, RowPlan::ERROR, $values, $errors, $warnings, null, null, [], $processed['unmapped']);
+        }
+
+        $code = (string) $values['list_code'];
+        $currency = (string) $values['currency'];
+        $list = $this->lists[$code] ?? null;
+        $articleId = $this->articles[mb_strtolower((string) $values['article'])] ?? null;
+
+        if ($articleId === null) {
+            $errors[] = __('Artikeln ":number" finns inte i artikelregistret. Läs in artiklarna först.', ['number' => mb_substr((string) $values['article'], 0, 40)]);
+        }
+
+        if ($list !== null && $list['archived']) {
+            $errors[] = __('Prislistan :code är arkiverad. Återställ den först.', ['code' => $code]);
+        } elseif ($list !== null && $list['currency'] !== $currency) {
+            $errors[] = __('Prislistan :code har valutan :list, inte :file.', ['code' => $code, 'list' => $list['currency'], 'file' => $currency]);
+        } elseif ($list === null && isset($this->newLists[$code]) && $this->newLists[$code] !== $currency) {
+            $errors[] = __('Prislistan :code har både :first och :second i filen. En lista har en valuta.', ['code' => $code, 'first' => $this->newLists[$code], 'second' => $currency]);
+        }
+
+        if ($errors !== []) {
+            return new RowPlan($line, RowPlan::ERROR, $values, $errors, $warnings);
+        }
+
+        $from = $values['valid_from'] ?? null;
+        $key = ($list['id'] ?? $code).'|'.$articleId.'|'.$values['quantity_milli'];
+        $periods = $this->periods[$key] ?? [];
+
+        foreach ($periods as $period) {
+            if ($period['from'] === $from && $period['to'] === null && $period['price'] === $values['price']) {
+                return new RowPlan($line, RowPlan::EXISTS, $values, [], $warnings, null, $list['id'] ?? null);
+            }
+        }
+
+        $overlapping = array_values(array_filter($periods, fn (array $period): bool => ($period['to'] === null || $from === null || $period['to'] >= $from)));
+        $replaces = null;
+
+        if ($overlapping !== []) {
+            $open = $overlapping[0];
+
+            // A later start ends the price that runs without an end date; anything else overlaps.
+            if (count($overlapping) === 1 && $from !== null && $open['to'] === null && ($open['from'] === null || $open['from'] < $from)) {
+                $replaces = $open;
+            } else {
+                return new RowPlan($line, RowPlan::ERROR, $values, [__('Artikeln :number har redan ett pris i listan :code för samma antal som gäller samtidigt. Ange ett startdatum efter det gamla prisets, och ordna filen med äldsta pris först.', ['number' => mb_substr((string) $values['article'], 0, 40), 'code' => $code])], $warnings);
+            }
+        }
+
+        if ($replaces !== null) {
+            $this->periods[$key] = array_map(fn (array $period): array => $period === $replaces ? [...$period, 'to' => CarbonImmutable::parse((string) $from)->subDay()->toDateString()] : $period, $periods);
+        }
+
+        $this->periods[$key][] = ['from' => $from, 'to' => null, 'price' => $values['price']];
+
+        if ($list === null) {
+            $this->newLists[$code] = $currency;
+            $warnings[] = __('Prislistan :code finns inte och skapas.', ['code' => $code]);
+            $warnings = array_values(array_unique($warnings));
+        }
+
+        return new RowPlan($line, RowPlan::CREATE, [...$values, 'article_id' => $articleId], [], $warnings, null, $list['id'] ?? null);
     }
 
     /**
@@ -289,8 +387,29 @@ final class RegisterImportEngine
             RegisterKind::Articles => $this->loadArticles(),
             RegisterKind::OpenCustomerInvoices => $this->loadOpenItems(Customer::query()->get(), ['org_number', 'personal_number'], Invoice::query()->where('import_source', 'IMPORT_OPEN')->get(['id', 'customer_id', 'external_ref'])->map(fn (Invoice $invoice): array => [$invoice->id, $invoice->customer_id, $invoice->external_ref])),
             RegisterKind::OpenSupplierInvoices => $this->loadOpenItems(Supplier::query()->get(), ['org_number'], SupplierInvoice::query()->where('import_source', 'IMPORT_OPEN')->get(['id', 'supplier_id', 'external_ref'])->map(fn (SupplierInvoice $invoice): array => [$invoice->id, $invoice->supplier_id, $invoice->external_ref])),
+            RegisterKind::PriceLists => $this->loadPriceLists(),
             RegisterKind::Attachments => null,
         };
+    }
+
+    private function loadPriceLists(): void
+    {
+        foreach (Article::query()->get(['id', 'number']) as $article) {
+            $this->articles[mb_strtolower($article->number)] ??= $article->id;
+        }
+
+        foreach (PriceList::query()->get(['id', 'code', 'currency', 'archived_at']) as $list) {
+            $this->lists[$list->code] = ['id' => $list->id, 'currency' => $list->currency, 'archived' => $list->archived_at !== null];
+        }
+
+        // Prices in the unit of the article, which is what a file's price is: other units never overlap them.
+        foreach (PriceListItem::query()->whereNull('archived_at')->whereNull('unit_id')->get(['price_list_id', 'article_id', 'min_quantity_milli', 'price_minor', 'valid_from', 'valid_to']) as $item) {
+            $this->periods[$item->price_list_id.'|'.$item->article_id.'|'.$item->min_quantity_milli][] = [
+                'from' => $item->valid_from?->toDateString(),
+                'to' => $item->valid_to?->toDateString(),
+                'price' => $item->price_minor,
+            ];
+        }
     }
 
     /**

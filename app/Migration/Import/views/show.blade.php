@@ -261,6 +261,8 @@
                     <p class="text-gray-700">
                         @if($kind->isOpenItems())
                             {{ __('Fakturorna skapas utan verifikation, eftersom saldot på :account redan finns i bokföringen från SIE-filen. De kan inte ändras eller tas bort efteråt, bara betalas, krediteras eller skrivas av.', ['account' => $kind->controlAccount()]) }}
+                        @elseif($kind === RegisterKind::PriceLists)
+                            {{ __('Priserna läggs in i prislistorna, och en lista som inte finns skapas. Ett pris som har börjat gälla kan inte ändras efteråt, bara avslutas; ett nytt pris från ett senare datum avslutar det gamla.') }}
                         @elseif($isZip)
                             {{ __('Filerna läggs som underlag på verifikationerna. Underlag på bokförda verifikationer kan läggas till men inte tas bort.') }}
                         @else

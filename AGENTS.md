@@ -166,6 +166,7 @@ supplier-invoices:create  supplier-invoices:approve  payments:create  payments:a
 vat:prepare  vat:submit
 reports:view  export:sie  export:archive  import:sie  import:fortnox
 api-tokens:manage  settings:manage  audit-log:view
+prices:view  prices:view-cost  price-lists:manage  price-agreements:manage  prices:approve-below-floor   (ADR-082, approved 2026-11-20)
 budgets:view  budgets:manage  projects:view  projects:manage
 analysis:view  analysis:share  approvals:manage
 documents:view  documents:manage  documents:hold  members:scope

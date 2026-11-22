@@ -15035,5 +15035,15 @@
     "Priser i en prislista har lagts till, ändrats eller tagits bort": "Prices in a price list were added, changed or removed",
     "Ett prisavtal med en kund har blivit aktivt": "A price agreement with a customer became active",
     "Ett prisavtal med en kund har upphört att gälla": "A price agreement with a customer stopped applying",
-    "Raden kunde inte sparas.": "The row could not be saved."
+    "Raden kunde inte sparas.": "The row could not be saved.",
+    "Artikeln \":number\" finns inte i artikelregistret. Läs in artiklarna först.": "The article \":number\" is not in the article register. Read in the articles first.",
+    "Artikeln :number har redan ett pris i listan :code för samma antal som gäller samtidigt. Ange ett startdatum efter det gamla prisets, och ordna filen med äldsta pris först.": "Article :number already has a price in list :code for the same quantity that applies at the same time. Give a start date after the old price, and order the file with the oldest price first.",
+    "Priserna läggs in i prislistorna, och en lista som inte finns skapas. Ett pris som har börjat gälla kan inte ändras efteråt, bara avslutas; ett nytt pris från ett senare datum avslutar det gamla.": "The prices are added to the price lists, and a list that does not exist is created. A price that has started to apply cannot be changed afterwards, only ended; a new price from a later date ends the old one.",
+    "Priset är noll.": "The price is zero.",
+    "Prislistan :code finns inte och skapas.": "Price list :code does not exist and will be created.",
+    "Prislistan :code har både :first och :second i filen. En lista har en valuta.": "Price list :code has both :first and :second in the file. A list has one currency.",
+    "Prislistan :code har valutan :list, inte :file.": "Price list :code has the currency :list, not :file.",
+    "Prislistan :code är arkiverad. Återställ den först.": "Price list :code is archived. Restore it first.",
+    "Prislistans kod": "Price list code",
+    "Prislistor och priser": "Price lists and prices"
 }

@@ -281,14 +281,6 @@
       "kommentar": "Vi har inte bestämt om det blir en egen modul eller en koppling till befintliga bokningssystem."
     },
     {
-      "id": "prislistor-kundavtal",
-      "rubrik": "Prislistor och kundavtal",
-      "beskrivning": "Flera prislistor med giltighetstid, kundpriser och kundavtal, kvantitetspriser och enkel prisuppdatering. Rätt pris väljs av sig självt på offerten, ordern och fakturan.",
-      "status": "Planerat",
-      "omrade": "Fakturering",
-      "uppdaterad": "2026-11-19"
-    },
-    {
       "id": "shopify",
       "rubrik": "Koppling till Shopify",
       "beskrivning": "Ordrar, returer och utbetalningar från Shopify Payments kommer in i bokföringen som dagliga verifikationsutkast, på samma sätt som försäljningen från kassasystemen Zettle och Onslip. I ett senare steg kopplas artiklar och lager åt båda hållen.",

@@ -46,6 +46,14 @@
         "intro": "Allt nedan finns i NONOX i dag. Tillverkning, Lager och Lön är moduler som du slår på under Inställningar → Moduler.",
         "items": [
             {
+                "title": "Prislistor med mängdpriser och prisavtal",
+                "text": "Återförsäljare, byggföretag och privatkunder kan ha var sin prislista, med pris per antal och en egen valuta, och ett prisavtal fastställer en kunds priser för en period. Prisuppdateringen ändrar många priser på en gång och visar först vad som ändras.",
+                "features": [
+                    "price_lists",
+                    "price_agreements"
+                ]
+            },
+            {
                 "title": "Enheter som räknas om exakt",
                 "text": "En artikel kan ha flera enheter, till exempel kvadratmeter, meter och styck, med exakta omräkningar mellan dem. Stycklistan, inköpet och lagret kan då räkna i den enhet som passar var och en.",
                 "features": [

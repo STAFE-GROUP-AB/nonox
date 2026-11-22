@@ -108,7 +108,7 @@ Inget uppskattat pris för Business Studio publiceras någonstans (beslut av äg
 | Fakturering i utländsk valuta | Tillval | ORDER "Valutaorder" +79 kr; BS/tillvalsmoduler/valutaorder (även Intrastat vid export, som NONOX inte har) |
 | Elektronisk signering (enkel elektronisk underskrift) | Större paket | BS/tillvalsmoduler/e-signering-scrive (tjänsten levereras av Scrive) finns i Business Studio (offert) men inte på Novas sidor. NONOX signering är en enkel elektronisk underskrift, inte BankID |
 | Variantartiklar | Tillval (NONOX: Finns inte) | ORDER "Variantartiklar" +99 kr; BS/tillvalsmoduler/variantartiklar |
-| Prislistor och kundavtal | Ingår (NONOX: Finns inte) | NO/basfunktioner "Prislistor", "Kundavtal", "Prishantering - flera nivåer". Motsägelse: BS/foretagspaket/handelspaket-business-studio (och Novas Handelspaket, +99 kr) nämner också prislistor, så det är oklart om Nova bara har dem i bas eller i Handelspaketet; raden visar bara det Novas egen baslista säger |
+| Prislistor och kundavtal | Ingår | NO/basfunktioner "Prislistor", "Kundavtal", "Prishantering - flera nivåer". Motsägelse: BS/foretagspaket/handelspaket-business-studio (och Novas Handelspaket, +99 kr) nämner också prislistor, så det är oklart om Nova bara har dem i bas eller i Handelspaketet; raden visar bara det Novas egen baslista säger |
 | Kassasystem | Större paket (NONOX: Finns inte) | BS/tillvalsmoduler/kassa-och-betalkort och BS/foretagspaket/butikspaket-business-studio finns i Business Studio men inte på Novas sidor. NONOX har ingen egen kassa; kopplingarna till Zettle och Onslip är byggda men inte i drift |
 | EDI-order | Större paket (NONOX: Finns inte) | BS/tillvalsmoduler/edi-order (offert), inte på Novas sidor |
 | E-handel | Större paket (NONOX: Finns inte) | BS/tillvalsmoduler/e-handel (offert), inte på Novas sidor. NONOX har bara API:t |
@@ -132,3 +132,7 @@ Alla andra leverantörers sidor lästes inte för de nya raderna. Därför visas
 Bankkopplingens omfattning: för Pyramid gäller bara utbetalningar till leverantörer. Vitec skriver inte att kontotransaktioner läses in.
 
 Leverantörsbetalningar är det enda Vitec anger för bankkopplingen, och raden Bankkoppling visar därför "Anges ej" för Vitec Pyramid, med Vitecs egna ord ovan som källa.
+
+### Prislistor och kundavtal (kontrollerat 2026-11-22)
+
+NONOX har raden som Finns (prislistor, kampanjer, kundgrupper och prisavtal, ADR-082). Fortnox, Visma Spiris, Bokio, Björn Lundén och Kleer står kvar som Anges ej: Fortnox faktureringssida (fortnox.se/produkt/fakturering) nämner bara en länk till sin prislista, inte prislistor eller kundpriser som funktion, och de övriga leverantörernas sidor har inte lästs för den här raden. Pyramid-värdet är oförändrat (se tabellen ovan).

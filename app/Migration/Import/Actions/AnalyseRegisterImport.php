@@ -347,11 +347,11 @@ class AnalyseRegisterImport
         return [
             'line' => $plan->line,
             'status' => $plan->status,
-            'name' => mb_substr((string) ($values['name'] ?? $values['invoice_number'] ?? ''), 0, 80),
-            'ref' => mb_substr((string) ($values['external_ref'] ?? $values['party_ref'] ?? $values['number'] ?? ''), 0, 40),
+            'name' => mb_substr((string) ($values['name'] ?? $values['invoice_number'] ?? $values['article'] ?? ''), 0, 80),
+            'ref' => mb_substr((string) ($values['external_ref'] ?? $values['party_ref'] ?? $values['number'] ?? $values['list_code'] ?? ''), 0, 40),
             'number' => isset($values['org_number']) ? (string) $values['org_number'] : (isset($values['personal_number']) ? str_repeat('•', 6).substr($digits((string) $values['personal_number']), -4) : ''),
             'city' => mb_substr((string) ($values['city'] ?? ''), 0, 40),
-            'amount' => isset($values['remaining']) ? self::kronor((int) $values['remaining']) : null,
+            'amount' => isset($values['remaining']) ? self::kronor((int) $values['remaining']) : (isset($values['list_code'], $values['price']) ? number_format($values['price'] / 100, 2, ',', ' ').' '.($values['currency'] ?? '') : null),
             'errors' => $plan->errors,
             'warnings' => $warnings,
         ];

@@ -9,13 +9,19 @@ use App\Actions\Accounting\ImportSie;
 use App\Actions\Invoicing\SaveArticle;
 use App\Actions\Invoicing\SaveCustomer;
 use App\Actions\Payables\SaveSupplier;
+use App\Actions\Pricing\SavePriceList;
+use App\Actions\Pricing\SavePriceListItem;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Domain\Payables\SupplierInvoiceStatus;
+use App\Domain\Pricing\PriceAnnouncer;
+use App\Domain\Pricing\PriceListKind;
 use App\Domain\Units\UnitCatalogue;
 use App\Migration\Import\Actions\AnalyseRegisterImport;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Invoice;
+use App\Models\PriceList;
+use App\Models\PriceListItem;
 use App\Models\RegisterImport;
 use App\Models\Supplier;
 use App\Models\SupplierInvoice;
@@ -51,7 +57,12 @@ final class RegisterImportRunner
         private readonly SaveSupplier $saveSupplier,
         private readonly SaveArticle $saveArticle,
         private readonly AttachToVoucher $attachToVoucher,
+        private readonly SavePriceList $savePriceList,
+        private readonly SavePriceListItem $savePriceListItem,
     ) {}
+
+    /** @var array<string, PriceList> lists found or created by this run, by code */
+    private array $priceLists = [];
 
     /** Runs the import for the current company context; the caller has set it. */
     public function run(RegisterImport $import, Company $company, User $user): RegisterImport
@@ -63,6 +74,8 @@ final class RegisterImportRunner
             $result = match (true) {
                 $kind === RegisterKind::Attachments => $this->attachments($import, $user),
                 $kind->isOpenItems() => $this->openItems($import, $kind, $company, $user),
+                // One announcement per list, not one per row (ADR-082 P9).
+                $kind === RegisterKind::PriceLists => PriceAnnouncer::batch(fn (): array => $this->registers($import, $kind, $company, $user)),
                 default => $this->registers($import, $kind, $company, $user),
             };
         } catch (Throwable $error) {
@@ -215,8 +228,45 @@ final class RegisterImportRunner
                 ? ($this->saveSupplier)($user, $company, ['name' => $record?->name, 'payment_terms_days' => $record?->payment_terms_days, ...$plan->fill], $record instanceof Supplier ? $record : null)
                 : ($this->saveSupplier)($user, $company, $plan->values),
             RegisterKind::Articles => $this->article($plan, $company, $user, $result),
+            RegisterKind::PriceLists => $this->priceItem($plan, $company, $user),
             default => throw new RuntimeException('Not a register kind.'),
         };
+    }
+
+    /**
+     * One price. A list the file names that does not exist is made with the
+     * row, inside the row's savepoint, so a row that fails adds nothing. A
+     * later start ends the price that runs without an end date, as the
+     * screen's "Nytt pris från datum" does.
+     */
+    private function priceItem(RowPlan $plan, Company $company, User $user): void
+    {
+        $values = $plan->values;
+        $code = (string) $values['list_code'];
+
+        $list = DB::transaction(function () use ($code, $values, $company, $user): PriceList {
+            $list = $this->priceLists[$code] ?? PriceList::query()->where('code', $code)->first()
+                ?? ($this->savePriceList)($user, $company, ['code' => $code, 'name' => mb_substr($code, 0, 100), 'kind' => PriceListKind::Standard->value, 'currency' => (string) $values['currency']]);
+
+            $from = $values['valid_from'] ?? null;
+            $replaces = $from === null ? null : PriceListItem::query()
+                ->where('price_list_id', $list->id)->where('article_id', $values['article_id'])
+                ->where('min_quantity_milli', $values['quantity_milli'])->whereNull('unit_id')->whereNull('archived_at')->whereNull('valid_to')
+                ->where(fn ($query) => $query->whereNull('valid_from')->orWhere('valid_from', '<', $from))
+                ->first();
+
+            ($this->savePriceListItem)($user, $company, $list, [
+                'article_id' => $values['article_id'],
+                'min_quantity' => $values['quantity_milli'] === 0 ? '' : rtrim(rtrim(number_format($values['quantity_milli'] / 1000, 3, ',', ''), '0'), ','),
+                'mode' => 'price',
+                'price' => number_format($values['price'] / 100, 2, ',', ''),
+                'valid_from' => $from,
+            ], null, $replaces);
+
+            return $list;
+        });
+
+        $this->priceLists[$code] = $list;
     }
 
     /** @return array<string, mixed> */

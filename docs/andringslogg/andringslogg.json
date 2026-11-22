@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-22-prislistor-lansering",
+      "datum": "2026-11-22T05:45:00+01:00",
+      "rubrik": "Läs in prislistor från en fil, och prislistor i alla branschexempel",
+      "beskrivning": "Under Bokföring → Läs in register väljer du Prislistor och priser och laddar upp en CSV- eller Excelfil med prislistans kod, valuta, artikelnummer, från antal, pris och startdatum. Du ser först vad varje rad gör och vilka som har fel, och först när du bekräftar läggs priserna in. Prislistor och kundavtal är nu klara, och branschexemplen har prislistor, kampanj, kundgrupp och prisavtal.",
+      "typ": "Nytt",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-22-api-prislistor-prisavtal",
       "datum": "2026-11-22T04:30:00+01:00",
       "rubrik": "Prislistor och prisavtal i API:et",

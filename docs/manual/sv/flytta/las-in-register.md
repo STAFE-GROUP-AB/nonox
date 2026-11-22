@@ -1,14 +1,14 @@
 ---
-beskrivning: Läs in kunder, leverantörer, artiklar, obetalda fakturor och underlag från ett annat program med en fil, i två steg där du ser en rapport innan något sparas.
+beskrivning: Läs in kunder, leverantörer, artiklar, prislistor, obetalda fakturor och underlag från ett annat program med en fil, i två steg där du ser en rapport innan något sparas.
 ordning: 65
 roller: [owner, admin, accountant]
 rutter: [import.registers.index, import.registers.show]
-sokord: [läs in register, importera kunder, importera leverantörer, importera artiklar, CSV, Excel, xlsx, kundregister, leverantörsregister, obetalda fakturor, öppna poster, 1510, 2440, underlag, ZIP, Mitt format, kolumner, flytta register]
+sokord: [prislistor, importera prislistor, priser från fil, läs in register, importera kunder, importera leverantörer, importera artiklar, CSV, Excel, xlsx, kundregister, leverantörsregister, obetalda fakturor, öppna poster, 1510, 2440, underlag, ZIP, Mitt format, kolumner, flytta register]
 ---
 
 # Läs in register
 
-Under **Bokföring → Läs in register** läser du in kunder, leverantörer, artiklar, obetalda fakturor och underlag från ett annat program. Det fungerar med en fil från vilket program som helst, för du kopplar själv filens kolumner till fälten i NONOX. Du får alltid en rapport innan något sparas, och det går att köra samma fil igen utan att något hamnar dubbelt.
+Under **Bokföring → Läs in register** läser du in kunder, leverantörer, artiklar, prislistor, obetalda fakturor och underlag från ett annat program. Det fungerar med en fil från vilket program som helst, för du kopplar själv filens kolumner till fälten i NONOX. Du får alltid en rapport innan något sparas, och det går att köra samma fil igen utan att något hamnar dubbelt.
 
 ![En uppladdad kundfil där kolumnerna kopplas till fälten i NONOX.](/bilder/manual/flytta/las-in-register.webp)
 
@@ -18,7 +18,7 @@ Läs först in bokföringen som SIE-fil; se [Från ett annat program](/manual/fl
 
 1. Kontrollera att du arbetar i rätt företag; namnet står högst upp i menyn.
 2. Gå till **Bokföring → Läs in register**.
-3. Under **Ladda upp en fil** väljer du vad filen innehåller under **Vad innehåller filen?**: **Kunder**, **Leverantörer**, **Artiklar**, **Obetalda kundfakturor**, **Obetalda leverantörsfakturor** eller **Underlag (ZIP)**.
+3. Under **Ladda upp en fil** väljer du vad filen innehåller under **Vad innehåller filen?**: **Kunder**, **Leverantörer**, **Artiklar**, **Prislistor och priser**, **Obetalda kundfakturor**, **Obetalda leverantörsfakturor** eller **Underlag (ZIP)**.
 4. Väljer du ett program under **Förval för kolumnerna** fylls kopplingen i åt dig. Annars väljer du **Egen fil eller NONOX-mall**. Under **Ladda ner en mall:** finns en tom fil med NONOX fält som rubriker.
 5. Välj filen och klicka på **Ladda upp och granska**. Ingenting ändras än.
 6. Under **Så läste vi filen** ser du hur NONOX läste filen: format, teckenkodning och avgränsare. Stämmer det inte kan du ändra det och klicka på **Granska igen**.
@@ -50,6 +50,22 @@ En post som redan finns, räknad på organisationsnummer eller personnummer, sed
 Posterna får nästa nummer i NONOX egen nummerserie. Numret från det gamla programmet sparas och visas som **Nummer i tidigare program** på kunden, leverantören och artikeln.
 
 Filer kan vara CSV, TSV, text eller Excel (.xlsx), högst 20 MB och 100 000 rader. Celler som börjar med =, +, - eller @ läses som text och räknas aldrig ut.
+
+## Prislistor och priser
+
+Välj **Prislistor och priser** för att läsa in priser till en eller flera prislistor. Läs in artiklarna först, för varje rad måste peka på en artikel som finns. Du behöver också ha behörighet att ändra prislistor, som ägare, administratör och redovisningskonsult har. Se [Prislistor](/manual/fakturering/prislistor) för hur listorna används.
+
+![Rapporten för en prisfil: priser som läggs till, ett som redan finns och en rad med en artikel som saknas.](/bilder/manual/flytta/las-in-register-prislistor.webp)
+
+Filen har en rad per pris, med kolumnerna **Prislistans kod**, **Valuta**, **Artikelnummer**, **Från antal**, **Pris** och **Gäller från**. Fälten Från antal och Gäller från kan vara tomma: ett tomt antal betyder från första enheten och ett tomt datum betyder att priset gäller från början.
+
+- En lista vars kod inte finns skapas som en vanlig prislista med koden som namn, i filens valuta. Du kan byta namn på den efteråt. Finns listan redan måste valutan vara densamma, och en arkiverad lista kan inte få nya priser.
+- Priset är i listans valuta, med eller utan moms som listan är inställd, och i artikelns enhet. En lista som skapas av filen är utan moms. Ett belopp som kan läsas på två sätt, till exempel 1,234, avvisas.
+- Ett pris som redan finns i listan med samma artikel, antal, startdatum och belopp hoppas över.
+- Ett pris med ett senare startdatum avslutar det pris som gäller utan slutdatum, som **Nytt pris från datum** gör på skärmen. Lägg priserna i datumordning med det äldsta först. Två priser för samma artikel och antal som skulle gälla samtidigt är ett fel på den raden.
+- Ett pris som har börjat gälla kan inte ändras genom att läsa in en ny fil, bara avslutas av ett nytt pris från ett senare datum.
+
+Vill du ändra många priser i befintliga listor och se vad som ändras innan det sparas, använd [Prisuppdatering](/manual/fakturering/prisuppdatering).
 
 ## Obetalda fakturor
 
@@ -96,3 +112,4 @@ Läs rapporten: vilka rader har fel, och gäller bokföringen samma datum som li
 - [Kunder, leverantörer och obetalda fakturor](/manual/flytta/kunder-leverantorer-och-obetalda-fakturor)
 - [Stäm av](/manual/flytta/stam-av)
 - [Kunder](/manual/fakturering/kunder)
+- [Prislistor](/manual/fakturering/prislistor)

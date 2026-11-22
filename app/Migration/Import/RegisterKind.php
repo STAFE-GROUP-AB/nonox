@@ -16,6 +16,7 @@ enum RegisterKind: string
     case OpenCustomerInvoices = 'open_customer_invoices';
     case OpenSupplierInvoices = 'open_supplier_invoices';
     case Attachments = 'attachments';
+    case PriceLists = 'price_lists';
 
     public function label(): string
     {
@@ -26,6 +27,7 @@ enum RegisterKind: string
             self::OpenCustomerInvoices => __('Obetalda kundfakturor'),
             self::OpenSupplierInvoices => __('Obetalda leverantörsfakturor'),
             self::Attachments => __('Underlag (ZIP)'),
+            self::PriceLists => __('Prislistor och priser'),
         };
     }
 
@@ -124,6 +126,14 @@ enum RegisterKind: string
                 'currency' => $f(__('Valuta'), 'text'),
             ],
             self::Attachments => [],
+            self::PriceLists => [
+                'list_code' => $f(__('Prislistans kod'), 'text', true),
+                'currency' => $f(__('Valuta'), 'text', true),
+                'article' => $f(__('Artikelnummer'), 'text', true),
+                'from_quantity' => $f(__('Från antal'), 'text'),
+                'price' => $f(__('Pris'), 'money', true),
+                'valid_from' => $f(__('Gäller från'), 'date'),
+            ],
         };
     }
 

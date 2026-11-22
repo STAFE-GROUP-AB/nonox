@@ -416,6 +416,9 @@ fakturering/kundportal-kunden: { foretag: konsult, anvandare: 'portal:karin.exem
 flytta/las-in-register: { foretag: konsult, rutt: import.registers.show, modell: { tabell: register_imports } }
 flytta/las-in-register-rapport: { foretag: konsult, rutt: import.registers.show, modell: { tabell: register_imports }, visa: 'text=Rapport' }
 
+# Läs in register, prislistor (PricingImportExtras): a price file checked but not read in.
+flytta/las-in-register-prislistor: { foretag: hantverkare, rutt: import.registers.show, modell: { tabell: register_imports, dar: { kind: price_lists } }, visa: 'text=Rapport' }
+
 # Prova utan att registrera: needs the demo switched on in /hq (instance setting demo.enabled) in the demo database.
 kom-igang/prova-utan-att-registrera: { foretag: konsult, rutt: demo.show, anvandare: gast, text: 'Prova NONOX på ett påhittat företag.' }
 

@@ -9,9 +9,11 @@ use App\Domain\Company\OrganisationNumber;
 use App\Domain\Invoicing\InvoiceCalculator;
 use App\Domain\Invoicing\Ocr;
 use App\Domain\Payables\Iban;
+use App\Domain\Pricing\PriceInput;
 use App\Support\Luhn;
 use App\Support\Money\Money;
 use Carbon\CarbonImmutable;
+use Carbon\Exceptions\InvalidFormatException;
 
 /**
  * Turns one row of a register file into the input the Save actions take,
@@ -31,7 +33,7 @@ final class RegisterRowProcessor
     /** Column lengths of the tables the actions write to. */
     private const array LENGTHS = [
         'name' => 255, 'email' => 255, 'phone' => 50, 'address_line1' => 255, 'address_line2' => 255,
-        'postal_code' => 20, 'city' => 255, 'external_ref' => 100, 'number' => 30, 'unit' => 10,
+        'postal_code' => 20, 'city' => 255, 'external_ref' => 100, 'number' => 30, 'unit' => 10, 'article' => 30,
     ];
 
     /**
@@ -103,6 +105,7 @@ final class RegisterRowProcessor
             RegisterKind::Suppliers => $this->supplier($values, $messages),
             RegisterKind::Articles => $this->article($values, $messages),
             RegisterKind::OpenCustomerInvoices, RegisterKind::OpenSupplierInvoices => $this->openInvoice($values, $messages),
+            RegisterKind::PriceLists => $this->priceListRow($values, $messages),
             RegisterKind::Attachments => null,
         };
 
@@ -200,7 +203,11 @@ final class RegisterRowProcessor
     private function date(string $label, string $raw): string
     {
         foreach (['Y-m-d', 'Ymd', 'd.m.Y', 'd/m/Y'] as $format) {
-            $date = CarbonImmutable::createFromFormat('!'.$format, $raw);
+            try {
+                $date = CarbonImmutable::createFromFormat('!'.$format, $raw);
+            } catch (InvalidFormatException) {
+                continue;
+            }
 
             if ($date instanceof CarbonImmutable && $date->format($format) === $raw) {
                 return $date->toDateString();
@@ -345,6 +352,46 @@ final class RegisterRowProcessor
         }
 
         $values['is_active'] ??= true;
+    }
+
+    /**
+     * A price on a list (ADR-082 §8, §Moving in): the list code and currency
+     * say where it goes, the quantity is read like the price screens read it,
+     * and the price is in the list's currency. Nothing is written here.
+     *
+     * @param  array<string, mixed>  $values
+     */
+    private function priceListRow(array &$values, RowMessages $messages): void
+    {
+        if (isset($values['list_code'])) {
+            $values['list_code'] = strtoupper((string) $values['list_code']);
+
+            if (mb_strlen($values['list_code']) > 20) {
+                $messages->error(__('Koden får vara högst 20 tecken.'));
+            }
+        }
+
+        if (isset($values['currency'])) {
+            $values['currency'] = strtoupper((string) $values['currency']);
+
+            if (! preg_match('/^[A-Z]{3}$/', $values['currency'])) {
+                $messages->error(__('Skriv valutan som tre bokstäver, till exempel SEK eller EUR.'));
+            }
+        }
+
+        $milli = PriceInput::quantityMilli((string) ($values['from_quantity'] ?? ''));
+
+        if ($milli === null) {
+            $messages->error(__('Skriv antalet som ett tal, till exempel 10 eller 2,5.'));
+        }
+
+        $values['quantity_milli'] = $milli ?? 0;
+
+        if (isset($values['price']) && $values['price'] < 0) {
+            $messages->error(__('Priset kan inte vara negativt.'));
+        } elseif (isset($values['price']) && $values['price'] === 0) {
+            $messages->warn(__('Priset är noll.'));
+        }
     }
 
     /**

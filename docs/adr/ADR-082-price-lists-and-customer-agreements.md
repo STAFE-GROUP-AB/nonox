@@ -1,6 +1,6 @@
 # ADR-082: Price lists and customer price agreements
 
-- Status: **Accepted** (owner 2026-11-20: "ja till alla" — all 17 recommended defaults, including the AGENTS.md §4 permission additions)
+- Status: **Accepted, implemented** (P1–P10 live 2026-11-22; owner 2026-11-20: "ja till alla" — all 17 recommended defaults, including the AGENTS.md §4 permission additions)
 - Date: 2026-11-20
 - Queue: item 28 in `docs/status/nummer-1.md` (`prislistor-kundavtal`)
 - Builds on: ADR-006 (Money and audit log), ADR-011 (invoicing, quotes and
@@ -927,3 +927,20 @@ P3).
   point at this ADR's resolver.
 - The comparison row "Prislistor och kundavtal" can be set to `yes` only after
   P3, P4 and P5 are live.
+
+## Follow-ups after P10
+
+Known and accepted at launch; none blocks the feature.
+
+- **Recurring agreements:** a re-save of a recurring agreement can swap the
+  price source between two rows that have the same article and price.
+- **Customer portal:** the portal's `held()` loads every sent document instead
+  of only those the page shows.
+- **Campaigns have no channel field:** a campaign cannot be aimed at one sales
+  channel; only channel lists can.
+- **Refunds and the margin floor:** whether a refund or credit should be
+  checked against the lowest contribution margin is an owner decision.
+- **Mass update (P6):** no `MARGIN` rule (set the price from a target margin)
+  and no supplier or customer-group filters.
+- **Open legal items:** P-L1 to P-L7 above stay `TODO(legal-verify)` until a
+  lawyer has read them.

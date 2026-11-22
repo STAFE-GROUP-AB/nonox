@@ -10,6 +10,7 @@ use App\Migration\Import\PresetRepository;
 use App\Migration\Import\RegisterFileReader;
 use App\Migration\Import\RegisterKind;
 use App\Models\Company;
+use App\Models\PriceList;
 use App\Models\RegisterImport;
 use App\Models\User;
 use App\Support\Audit\Audit;
@@ -38,6 +39,11 @@ class UploadRegisterFile
     public function __invoke(User $user, Company $company, RegisterKind $kind, string $source, mixed $file): RegisterImport
     {
         Gate::forUser($user)->authorize('create', [RegisterImport::class, $company]);
+
+        // A price list is a price decision: it takes the permission of the price screens too (ADR-082 decision 15).
+        if ($kind === RegisterKind::PriceLists) {
+            Gate::forUser($user)->authorize('create', [PriceList::class, $company]);
+        }
 
         Validator::make(['file' => $file], [
             'file' => ['required', 'file', 'max:'.($kind === RegisterKind::Attachments ? AttachmentZip::MAX_ZIP_KILOBYTES : self::MAX_KILOBYTES)],
