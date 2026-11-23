@@ -4,8 +4,8 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.160
-- Datum: 2026-11-22
+- Version: 0.161
+- Datum: 2026-11-23
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
   kontroll av huvudboken, ingående balanser, SIE-export och SIE-import,
@@ -2242,9 +2242,8 @@ balances").
   (`invoice_rows_protect_issued`). En kreditfaktura kopierar raderna den
   krediterar. `price_source` och `price_explanation` finns kvar på den
   utfärdade fakturans rader så länge fakturan bevaras (BFL 7 kap.).
-  De ingår i dag inte i arkivpaketet (som har fakturan som PDF med à-pris
-  och rabatt) och inte i SIE (som inte bär priser); att ta med dem i
-  arkivpaketet är en uppföljning under punkt 28 i `docs/status/nummer-1.md`.
+  De ingår i SIE inte (SIE bär inga priser), men från version 0.161 ingår de
+  i arkivpaketet som `kundfakturor/Prisuppgifter.csv` (avsnitt 7a).
 - Offerter och order har en valuta (`sales_documents.currency`, standard
   SEK). Priserna på raderna är i den valutan; bara en offert eller order i
   SEK avrundas till hela kronor. Valutan följer med till ordern och till
@@ -6448,6 +6447,15 @@ rapport över avtalen och bokför ingenting.
     året, som PDF i fakturans egen layout. Från version 0.117 är det den PDF som
     sparades när fakturan utfärdades (se nedan); en faktura som utfärdades
     tidigare får en PDF som tas fram från fakturans uppgifter när paketet byggs.
+  - `kundfakturor/Prisuppgifter.csv` (från version 0.161, ADR-082 §5): hur
+    varje fakturarads pris valdes. En rad per rad på årets utfärdade kund- och
+    kreditfakturor (inte utkast): fakturanummer, typ, fakturadatum, radnummer,
+    artikelnummer, beskrivning, antal, à-pris i kronor, `price_source` och
+    `price_explanation` (JSON). Filen är UTF-8 med BOM och semikolon som övriga
+    CSV-filer, hör till samma företag och år som fakturorna, tas med i
+    manifestet och kontrollsummorna och beskrivs i `LASMIG.txt`. Den skapas
+    bara om året har fakturarader. Raderna läses i omgångar utan en fråga per
+    faktura. Ingenting bokförs och SIE-exporten är oförändrad.
   - `leverantorsfakturor/`: leverantörsfakturorna med fakturadatum under året,
     som de laddades upp.
   - `moms/`: rutor och belopp för varje redovisad momsperiod och filen till
@@ -7148,3 +7156,4 @@ påverkar bokföringen och fakturan:
 | 0.158 | 2026-11-22 | Försegling av signerade dokument (ADR-046 tillägg, lucka 5, paket S10): avstängd tills den slås på i /hq; den färdiga filen (den signerade versionen med en sammanställningssida) förseglas med PAdES B-B eller B-T som inkrementella uppdateringar och sparas som `SEALED` i `signing_document_versions`; kopiorna väntar på förseglingen; företagets eget förseglingscertifikat sparas krypterat i `signing_seal_certificates`. Ingenting bokförs och ingen verifikation, numrering eller hashkedja ändras. |
 | 0.159 | 2026-11-22 | Långtidsvalidering av förseglade filer (ADR-046 tillägg, lucka 5, paket S11): efter en försegling med tidsstämpel läggs valideringsdata till (PAdES B-LT), och `signing:timestamp` lägger varje natt till en dokumenttidsstämpel (PAdES B-LTA) innan den senaste tidsstämpeln slutar vara tillförlitlig, bara inom bevarandetiden eller under bevarandespärr; varje fil är en inkrementell uppdatering som sparas som `TIMESTAMPED` i `signing_document_versions`. Avstängd så länge försegling är avstängd. Ingenting bokförs och ingen verifikation, numrering eller hashkedja ändras. |
 | 0.160 | 2026-11-22 | Underskrift hos extern tjänst (ADR-046 tillägg, lucka 12, paket S17): en undertecknare kan skriva under hos en tjänst med Cloud Signature Consortiums API v2 som företaget har lagt in; underskriften (PAdES) läggs in i undertecknarens version, som sparas som `AFTER_SIGNER`, och hashkedjan får `PROVIDER_SIGNED`. Avstängd tills den slås på för installationen. Ingenting bokförs och ingen verifikation, numrering eller hashkedja för bokföringen ändras. |
+| 0.161 | 2026-11-23 | Arkivpaketet får `kundfakturor/Prisuppgifter.csv` (avsnitt 7a, ADR-082 §5): hur varje fakturarads pris valdes (`price_source`, `price_explanation`) för årets utfärdade kund- och kreditfakturor, med kontrollsumma i manifestet. Ingenting bokförs och ingen verifikation, numrering eller hashkedja ändras; SIE är oförändrad. |

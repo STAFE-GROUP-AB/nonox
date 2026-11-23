@@ -29,6 +29,7 @@ use App\Models\DocumentVersion;
 use App\Models\FiscalYear;
 use App\Models\IntercompanyDelivery;
 use App\Models\Invoice;
+use App\Models\InvoiceRow;
 use App\Models\SupplierInvoice;
 use App\Models\SupplierPaymentBatch;
 use App\Models\User;
@@ -245,7 +246,69 @@ final class ArchivePackageBuilder
                 $count++;
             });
 
-        return $count;
+        return $count + $this->priceInformation($fiscalYear);
+    }
+
+    /**
+     * How each row's price was chosen (ADR-082 §5): one line per row of the
+     * year's issued invoices and credit invoices, as a CSV that reads without
+     * NONOX. The rows are locked once issued, so this is what the invoice
+     * showed. Rows are read in chunks with one article query per chunk.
+     */
+    private function priceInformation(FiscalYear $fiscalYear): int
+    {
+        $out = null;
+        $path = 'kundfakturor/Prisuppgifter.csv';
+
+        // Same invoices as the PDFs above, plus imported ones: their rows are ours to keep even without a PDF of ours.
+        InvoiceRow::query()
+            ->join('invoices', function ($join): void {
+                $join->on('invoices.id', '=', 'invoice_rows.invoice_id')->on('invoices.company_id', '=', 'invoice_rows.company_id');
+            })
+            ->where('invoices.status', '!=', InvoiceStatus::Draft->value)
+            ->whereDate('invoices.invoice_date', '>=', $fiscalYear->start_date->toDateString())
+            ->whereDate('invoices.invoice_date', '<=', $fiscalYear->end_date->toDateString())
+            ->select('invoice_rows.*', 'invoices.number as archive_number', 'invoices.invoice_date as archive_date', 'invoices.credits_invoice_id as archive_credits', 'invoices.external_ref as archive_external_ref')
+            ->with('article:id,number')
+            ->orderBy('invoices.invoice_date')
+            ->orderBy('invoices.number')
+            ->orderBy('invoice_rows.position')
+            ->orderBy('invoice_rows.id')
+            ->chunk(500, function ($rows) use (&$out, $path): void {
+                if ($out === null) {
+                    $out = $this->open($path);
+                    fwrite($out, "\xEF\xBB\xBF");
+                    fputcsv($out, [__('Fakturanummer'), __('Typ'), __('Fakturadatum'), __('Rad'), __('Artikelnummer'), __('Beskrivning'), __('Antal'), __('À-pris, kronor'), __('Prisets ursprung'), __('Förklaring av priset (JSON)')], ';', '"', '');
+                }
+
+                foreach ($rows as $row) {
+                    $ore = $row->unit_price_ore->ore;
+                    $number = $row->getAttribute('archive_number');
+                    $price = ($ore < 0 ? '-' : '').intdiv(abs($ore), 100).','.str_pad((string) (abs($ore) % 100), 2, '0', STR_PAD_LEFT);
+
+                    fputcsv($out, Csv::row([
+                        $number !== null ? (string) $number : (string) $row->getAttribute('archive_external_ref'),
+                        $row->getAttribute('archive_credits') !== null ? __('Kreditfaktura') : __('Faktura'),
+                        substr((string) $row->getAttribute('archive_date'), 0, 10),
+                        (string) ($row->position + 1),
+                        (string) $row->article?->number,
+                        $row->description,
+                        (string) $row->quantity,
+                        $price,
+                        $row->price_source->value ?? '',
+                        $row->price_explanation === null ? '' : (string) json_encode($row->price_explanation, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                    ]), ';', '"', '');
+                }
+            });
+
+        if ($out === null) {
+            return 0;
+        }
+
+        fclose($out);
+        $this->record($path);
+
+        return 1;
     }
 
     /**

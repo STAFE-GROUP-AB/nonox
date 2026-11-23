@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-23-arkivpaket-prisuppgifter",
+      "datum": "2026-11-23T02:45:00+01:00",
+      "rubrik": "Arkivpaketet visar hur varje fakturarads pris valdes",
+      "beskrivning": "Arkivpaketet har fått filen kundfakturor/Prisuppgifter.csv med en rad per fakturarad på årets utfärdade kund- och kreditfakturor: artikel, antal, à-pris, prisets ursprung och förklaring. Filen går att läsa utan NONOX och finns med i kontrollsummorna.",
+      "typ": "Förbättrat",
+      "omrade": "Bokslut"
+    },
+    {
       "id": "2026-11-23-pdf-motor-sandlada",
       "datum": "2026-11-23T01:10:00+01:00",
       "rubrik": "PDF-motorn kan köras i en sandlåda",
