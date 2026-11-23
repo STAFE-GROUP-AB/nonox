@@ -15154,5 +15154,12 @@
     "SHA-256 för den senaste versionen, som du laddar ner: :hash": "SHA-256 of the latest version, the one you download: :hash",
     "NONOX försöker lägga till en ny tidsstämpel före :date (då tidsstämpelserverns certifikat går ut eller ett datum som installationen har angett), så länge dokumentet bevaras och försegling är påslagen.": "NONOX will try to add a new timestamp before :date (when the timestamp server's certificate expires, or a date the installation has set), for as long as the document is kept and sealing is switched on.",
     "Valideringsdata har lagts till i filen (:level): certifikaten och deras spärrstatus. Med dem går det att kontrollera att certifikaten gällde när tidsstämpeln gjordes, även sedan de har gått ut, så länge tidsstämpeln är tillförlitlig.": "Validation data has been added to the file (:level): the certificates and their revocation status. With them it can be checked that the certificates were valid when the timestamp was made, even after they have expired, for as long as the timestamp is reliable.",
-    "Ett certifikat i filen är spärrat av sin utfärdare, så valideringsdata läggs inte till.": "A certificate in the file has been revoked by its issuer, so no validation data is added."
+    "Ett certifikat i filen är spärrat av sin utfärdare, så valideringsdata läggs inte till.": "A certificate in the file has been revoked by its issuer, so no validation data is added.",
+    "Försegling kräver att PDF-motorn körs i en sandlåda.": "Sealing requires the PDF engine to run in a sandbox.",
+    "PDF-motorn körs inte i en sandlåda, vilket installationen kräver för försegling": "the PDF engine does not run in a sandbox, which this installation requires for sealing",
+    "Sandlådan (bubblewrap) är påslagen men hittas inte eller går inte att köra. Installera bubblewrap eller sätt NONOX_PDF_ENGINE_SANDBOX=none.": "The sandbox (bubblewrap) is switched on but cannot be found or run. Install bubblewrap or set NONOX_PDF_ENGINE_SANDBOX=none.",
+    "PDF-motorn startar inte i sandlådan: :reason": "The PDF engine does not start in the sandbox: :reason",
+    "Sandlåda": "Sandbox",
+    "På (bubblewrap)": "On (bubblewrap)",
+    "Sandlådan skulle göra programmets mapp, lagringsmappen, .env eller en hemkatalog synlig (:path). Flytta PDF-motorns Python-miljö och typsnitt, se NONOX_PDF_ENGINE_PYTHON och NONOX_PDF_ENGINE_FONTS.": "The sandbox would expose the application folder, the storage folder, .env or a home directory (:path). Move the PDF engine's Python environment and fonts, see NONOX_PDF_ENGINE_PYTHON and NONOX_PDF_ENGINE_FONTS."
 }

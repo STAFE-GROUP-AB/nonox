@@ -70,6 +70,7 @@
             @foreach(['python' => 'Python', 'pyhanko' => 'pyHanko', 'pypdfium2' => 'pypdfium2'] as $key => $label)
                 <div><dt class="text-gray-500">{{ $label }}</dt><dd class="tabular-nums text-ink">{{ $pdfEngine->versions[$key] ?? '–' }}</dd></div>
             @endforeach
+            <div><dt class="text-gray-500">{{ __('Sandlåda') }}</dt><dd class="text-ink">{{ $pdfEngine->sandboxed ? __('På (bubblewrap)') : __('Av') }}</dd></div>
             <div><dt class="text-gray-500">{{ __('Typsnitt för kinesiska, japanska och koreanska') }}</dt><dd class="text-ink">{{ $pdfEngine->canStampCjk() ? __('Finns') : __('Saknas') }}</dd></div>
         </dl>
 

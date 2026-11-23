@@ -371,6 +371,23 @@ it('does not seal without the engine or without any certificate', function () {
     expect($second->refresh()->seal_status)->toBeNull();
 });
 
+it('does not seal when the installation requires the sandbox and the engine is not configured for it', function () {
+    s10SwitchOn();
+    config(['nonox.signing.pdf_engine.require_sandbox_for_seal' => true, 'nonox.signing.pdf_engine.sandbox' => 'none']);
+    $first = s10Send($this->owner, $this->company, [['email' => 'anna@example.test', 'step' => 1, 'verification' => 'NONE']]);
+    s10Sign('anna@example.test');
+    expect($first->refresh()->seal_status)->toBeNull()
+        ->and($this->engine->operations())->not->toContain('seal');
+
+    // Configured for the sandbox: the gate is config only, so a stale or missing health never fails an envelope.
+    config(['nonox.signing.pdf_engine.sandbox' => 'bwrap']);
+    $second = s10Send($this->owner, $this->company, [['email' => 'bo@example.test', 'step' => 1, 'verification' => 'NONE']]);
+    s10Sign('bo@example.test', 'Bo Berg');
+
+    expect($second->refresh()->seal_status)->toBe(SealStatus::Sealed)
+        ->and($second->seal_failure)->not->toBe(EnvelopeSealer::SANDBOX_REQUIRED);
+});
+
 it('mails the sealed file to every signer and copy recipient of an envelope with several signers, once, after the seal', function () {
     s10SwitchOn();
     $envelope = s10Send($this->owner, $this->company, [

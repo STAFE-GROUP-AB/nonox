@@ -80,10 +80,13 @@
                     </div>
                 </div>
                 <div class="flex items-start gap-3">
-                    <input id="hq-signing-seal-enabled" type="checkbox" wire:model="signingSealEnabled" class="mt-1 h-5 w-5 rounded border-gray-300 text-accent-600 focus:ring-accent-500" aria-describedby="hq-signing-seal-enabled-hint">
+                    <input id="hq-signing-seal-enabled" type="checkbox" wire:model="signingSealEnabled" class="mt-1 h-5 w-5 rounded border-gray-300 text-accent-600 focus:ring-accent-500" aria-describedby="hq-signing-seal-enabled-hint @error('signing_seal_enabled') hq-signing-seal-enabled-error @enderror">
                     <div>
                         <label for="hq-signing-seal-enabled" class="text-sm font-medium text-gray-800">{{ __('Försegling av signerade dokument') }}</label>
                         <p id="hq-signing-seal-enabled-hint" class="text-sm text-gray-600">{{ __('På: när alla har signerat förseglas dokumentet med en elektronisk stämpel (PAdES) innan kopiorna skickas. Kräver PDF-motorn och ett förseglingscertifikat (signing:seal-certificate eller företagets eget). I den driftade tjänsten: sätt på först när juristen har svarat på frågan om betrodda tjänster enligt eIDAS.') }}</p>
+                        @error('signing_seal_enabled')
+                            <p id="hq-signing-seal-enabled-error" class="mt-1 text-sm font-medium text-accent-700" role="alert">{{ $message }}</p>
+                        @enderror
                     </div>
                 </div>
                 <div class="flex items-start gap-3">

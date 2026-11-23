@@ -242,3 +242,15 @@ pip-compile --generate-hashes --strip-extras --no-header \
 Read the new versions' changelogs, update the table above, run
 `PdfEngineRealTest`, and say in the PR what changed. `signing:engine-doctor`
 warns an operator whose installed pyHanko or pypdfium2 differs from the lock.
+
+## OS sandbox (optional)
+
+`SidecarPdfEngine` can wrap the helper in bubblewrap (`NONOX_PDF_ENGINE_SANDBOX=bwrap`,
+`NONOX_PDF_ENGINE_BWRAP`). The argument list is built by `BubblewrapSandbox` (never a shell
+string): read-only system paths, the venv, this directory and the fonts directory, a
+read-write bind of the call's own work directory only, `--unshare-all` (no network) and `--share-net` only for the operations that fetch timestamps or
+revocation data (seal with timestamp URLs, timestamp, add_validation_data, archive_timestamp). Those
+operations can reach services on 127.0.0.1, so Redis and similar must require a password or ACL. The application's base path,
+`storage/` and `.env` are not mounted. A configured sandbox that cannot run is a failure,
+never a silent fallback. `NONOX_PDF_ENGINE_REQUIRE_SANDBOX=true` makes sealing depend on it.
+See `docs/drift/pdf-motorn.md`.

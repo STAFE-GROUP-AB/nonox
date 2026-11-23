@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Hq;
 
+use App\Domain\Signing\Seal\Sealing;
 use App\Models\Company;
 use App\Models\InstanceSetting;
 use App\Models\User;
@@ -14,6 +15,7 @@ use App\Support\Status\SecurityTxt;
 use Closure;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Changes the installation's settings in /hq (ADR-044). Only an HQ admin;
@@ -84,6 +86,10 @@ final class UpdateInstanceSettings
             InstanceSettings::SIGNING_VERIFY_ENABLED => array_key_exists('signing_verify_enabled', $validated) ? (bool) $validated['signing_verify_enabled'] : InstanceSettings::current()->signingVerifyEnabled(),
             InstanceSettings::SIGNING_PROVIDERS_ENABLED => array_key_exists('signing_providers_enabled', $validated) ? (bool) $validated['signing_providers_enabled'] : InstanceSettings::current()->signingProvidersEnabled(),
         ];
+
+        if ($new[InstanceSettings::SIGNING_SEAL_ENABLED] === true && $before[InstanceSettings::SIGNING_SEAL_ENABLED] !== true && ($reason = Sealing::sandboxProblem()) !== null) {
+            throw ValidationException::withMessages(['signing_seal_enabled' => $reason]);
+        }
 
         $changed = array_keys(array_filter($new, fn (mixed $value, string $key): bool => $before[$key] !== $value, ARRAY_FILTER_USE_BOTH));
         // The contact may be a person's address: the log says that it was set or cleared, not what it is.

@@ -26,6 +26,7 @@ final readonly class PdfEngineHealth
         public ?array $selfTest = null,
         public array $problems = [],
         public ?string $checkedAt = null,
+        public bool $sandboxed = false,
     ) {}
 
     /** Whether the screens that need the engine (fields, seal) may be offered. */
@@ -41,7 +42,7 @@ final readonly class PdfEngineHealth
     }
 
     /**
-     * @return array{driver: string, installed: bool, working: bool, versions: array<string, string|int|null>, fonts: array<string, bool>, self_test: array<string, bool|null>|null, problems: list<string>, checked_at: ?string}
+     * @return array{driver: string, installed: bool, working: bool, versions: array<string, string|int|null>, fonts: array<string, bool>, self_test: array<string, bool|null>|null, problems: list<string>, checked_at: ?string, sandboxed: bool}
      */
     public function toArray(): array
     {
@@ -54,6 +55,7 @@ final readonly class PdfEngineHealth
             'self_test' => $this->selfTest,
             'problems' => $this->problems,
             'checked_at' => $this->checkedAt,
+            'sandboxed' => $this->sandboxed,
         ];
     }
 
@@ -78,6 +80,7 @@ final readonly class PdfEngineHealth
             selfTest: $selfTest,
             problems: $problems,
             checkedAt: isset($data['checked_at']) ? (string) $data['checked_at'] : null,
+            sandboxed: (bool) ($data['sandboxed'] ?? false),
         );
     }
 }

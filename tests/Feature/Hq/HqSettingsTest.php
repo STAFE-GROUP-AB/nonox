@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Actions\Hq\UpdateInstanceSettings;
 use App\Actions\Waitlist\JoinWaitlist;
+use App\Domain\Signing\Pdf\FakePdfEngine;
 use App\Livewire\Auth\LoginForm;
 use App\Livewire\Hq\Settings;
 use App\Livewire\Waitlist\JoinForm;
@@ -226,4 +227,17 @@ it('lists companies whose mailings only HQ may resume, and lifts the pause with 
 
     expect(MailingPause::pausedAt($company))->toBeNull()
         ->and(AuditLog::query()->where('action', 'hq.crm_mailings_resumed')->sole()->user_id)->toBe($this->admin->id);
+});
+
+it('shows why sealing cannot be switched on when the sandbox is required but missing', function () {
+    $this->actingAs($this->admin);
+    session()->put('hq.step_up', ['user_id' => $this->admin->id, 'at' => now()->subMinute()->getTimestamp()]);
+    config(['nonox.signing.pdf_engine.require_sandbox_for_seal' => true, 'nonox.signing.pdf_engine.sandbox' => 'none']);
+    FakePdfEngine::install();
+
+    Livewire::test(Settings::class)
+        ->set('signingSealEnabled', true)
+        ->call('save', null)
+        ->assertHasErrors('signing_seal_enabled')
+        ->assertSee('Försegling kräver att PDF-motorn körs i en sandlåda.');
 });

@@ -140,6 +140,11 @@ return [
             'work_dir' => env('NONOX_PDF_ENGINE_WORK_DIR', storage_path('app/pdf-engine-work')),
             'timeout' => (int) env('NONOX_PDF_ENGINE_TIMEOUT', 60),
             'memory_mb' => (int) env('NONOX_PDF_ENGINE_MEMORY_MB', 2048),
+            // OS sandbox for the helper: none | bwrap (bubblewrap, Linux). See docs/drift/pdf-motorn.md.
+            'sandbox' => env('NONOX_PDF_ENGINE_SANDBOX', 'none'),
+            'bwrap_path' => env('NONOX_PDF_ENGINE_BWRAP', '/usr/bin/bwrap'),
+            // When true, sealing (S10) is unavailable unless the engine runs in the sandbox.
+            'require_sandbox_for_seal' => (bool) env('NONOX_PDF_ENGINE_REQUIRE_SANDBOX', false),
         ],
 
         /*

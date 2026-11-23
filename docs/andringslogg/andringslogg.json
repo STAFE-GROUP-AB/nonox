@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-23-pdf-motor-sandlada",
+      "datum": "2026-11-23T01:10:00+01:00",
+      "rubrik": "PDF-motorn kan köras i en sandlåda",
+      "beskrivning": "Vid egen drift kan PDF-motorn för signering startas i en sandlåda i operativsystemet (bubblewrap), där den bara ser sin egen arbetsmapp och inte .env eller lagringsmappen. Installationen kan kräva sandlådan för försegling, och HQ och signing:engine-doctor visar om den är på.",
+      "typ": "Säkerhet",
+      "omrade": "Avtal"
+    },
+    {
       "id": "2026-11-23-heic-avkodare",
       "datum": "2026-11-23T01:05:00+01:00",
       "rubrik": "iPhone-bilder läses bara som riktiga HEIC-filer",
