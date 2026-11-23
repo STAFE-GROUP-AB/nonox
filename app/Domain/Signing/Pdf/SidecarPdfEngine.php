@@ -115,6 +115,10 @@ final class SidecarPdfEngine implements PdfEngine
             );
         }
 
+        if ($this->sandbox === 'bwrap' && ($pathProblem = $this->sandboxPathProblem()) !== null) {
+            return new PdfEngineHealth($this->driver(), true, false, problems: [$pathProblem], checkedAt: $checkedAt);
+        }
+
         if ($this->sandbox === 'bwrap' && ! $this->bwrapAvailable()) {
             return new PdfEngineHealth(
                 driver: $this->driver(),
@@ -187,7 +191,7 @@ final class SidecarPdfEngine implements PdfEngine
      *
      * @return list<string>
      */
-    private function command(string $work): array
+    private function command(string $work, bool $network): array
     {
         $inner = [$this->python, '-I', $this->script];
 
@@ -199,7 +203,22 @@ final class SidecarPdfEngine implements PdfEngine
             throw new PdfEngineException(PdfEngineFailure::Failed, detail: 'sandbox missing');
         }
 
-        return (new BubblewrapSandbox($this->bwrapPath, BubblewrapSandbox::pathsFor($this->python, $this->script, $this->fontsDirectory)))->command($work, $inner);
+        if ($this->sandboxPathProblem() !== null) {
+            throw new PdfEngineException(PdfEngineFailure::Failed, detail: 'sandbox paths');
+        }
+
+        return (new BubblewrapSandbox($this->bwrapPath, BubblewrapSandbox::pathsFor($this->python, $this->script, $this->fontsDirectory)))->command($work, $inner, $network);
+    }
+
+    /** A Swedish sentence when a path that the sandbox would show read-only exposes the application, storage, .env or a home directory. */
+    private function sandboxPathProblem(): ?string
+    {
+        $home = (string) (getenv('HOME') ?: ($_SERVER['HOME'] ?? ''));
+        $storage = storage_path();
+        $protected = array_values(array_filter([base_path(), base_path('.env'), $storage, (string) realpath($storage), $home, (string) realpath($home)]));
+        $unsafe = BubblewrapSandbox::unsafePath(BubblewrapSandbox::pathsFor($this->python, $this->script, $this->fontsDirectory), $protected, base_path('tools/pdf-engine'));
+
+        return $unsafe === null ? null : (string) __('Sandlådan skulle göra programmets mapp, lagringsmappen, .env eller en hemkatalog synlig (:path). Flytta PDF-motorns Python-miljö och typsnitt, se NONOX_PDF_ENGINE_PYTHON och NONOX_PDF_ENGINE_FONTS.', ['path' => $unsafe]);
     }
 
     public function inspect(string $pdfPath): PdfInspection
@@ -589,6 +608,8 @@ final class SidecarPdfEngine implements PdfEngine
         }
 
         $timeout ??= $this->timeoutSeconds;
+        $network = in_array($operation, ['timestamp', 'add_validation_data', 'archive_timestamp'], true)
+            || ($operation === 'seal' && ($params['timestamp_urls'] ?? []) !== []);
         $request = array_merge($params, [
             'protocol' => self::PROTOCOL,
             'op' => $operation,
@@ -618,7 +639,7 @@ final class SidecarPdfEngine implements PdfEngine
                 ->timeout($timeout)
                 ->env($this->environment($work))
                 ->input($json)
-                ->start($this->command($work), function (string $type, string $buffer) use (&$stdoutBytes, &$stderrBytes, &$overflow): void {
+                ->start($this->command($work, $network), function (string $type, string $buffer) use (&$stdoutBytes, &$stderrBytes, &$overflow): void {
                     // Counts only; the loop below stops the process. Throwing here would leave
                     // a running process behind to call this again when it is released.
                     if ($type === SymfonyProcess::ERR) {

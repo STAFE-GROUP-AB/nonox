@@ -66,7 +66,7 @@ final class LongTermValidation
     /** Whether long-term validation runs on this installation at all. */
     public static function applies(): bool
     {
-        return Sealing::switchedOn() && app(PdfEngine::class)->isInstalled() && Sealing::timestampUrls() !== [];
+        return Sealing::switchedOn() && app(PdfEngine::class)->isInstalled() && Sealing::sandboxProblem(checkEngine: false) === null && Sealing::timestampUrls() !== [];
     }
 
     /** Months before the newest timestamp stops being reliable that a new document timestamp is added (1–60, default 12). */

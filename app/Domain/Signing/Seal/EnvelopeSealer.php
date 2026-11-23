@@ -153,7 +153,7 @@ final class EnvelopeSealer
             return $this->fail($envelope->id, PdfEngineFailure::NotInstalled->value);
         }
 
-        if (Sealing::sandboxProblem() !== null) {
+        if (Sealing::sandboxProblem(checkEngine: false) !== null) {
             return $this->fail($envelope->id, self::SANDBOX_REQUIRED);
         }
 

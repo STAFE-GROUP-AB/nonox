@@ -15160,5 +15160,6 @@
     "Sandlådan (bubblewrap) är påslagen men hittas inte eller går inte att köra. Installera bubblewrap eller sätt NONOX_PDF_ENGINE_SANDBOX=none.": "The sandbox (bubblewrap) is switched on but cannot be found or run. Install bubblewrap or set NONOX_PDF_ENGINE_SANDBOX=none.",
     "PDF-motorn startar inte i sandlådan: :reason": "The PDF engine does not start in the sandbox: :reason",
     "Sandlåda": "Sandbox",
-    "På (bubblewrap)": "On (bubblewrap)"
+    "På (bubblewrap)": "On (bubblewrap)",
+    "Sandlådan skulle göra programmets mapp, lagringsmappen, .env eller en hemkatalog synlig (:path). Flytta PDF-motorns Python-miljö och typsnitt, se NONOX_PDF_ENGINE_PYTHON och NONOX_PDF_ENGINE_FONTS.": "The sandbox would expose the application folder, the storage folder, .env or a home directory (:path). Move the PDF engine's Python environment and fonts, see NONOX_PDF_ENGINE_PYTHON and NONOX_PDF_ENGINE_FONTS."
 }
