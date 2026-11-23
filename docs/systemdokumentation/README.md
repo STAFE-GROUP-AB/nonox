@@ -6451,7 +6451,8 @@ rapport över avtalen och bokför ingenting.
     varje fakturarads pris valdes. En rad per rad på årets utfärdade kund- och
     kreditfakturor (inte utkast): fakturanummer, typ, fakturadatum, radnummer,
     artikelnummer, beskrivning, antal, à-pris i kronor, `price_source` och
-    `price_explanation` (JSON). Filen är UTF-8 med BOM och semikolon som övriga
+    `price_explanation` (JSON), samt fakturans valuta och, för fakturor i en
+    annan valuta än kronor, à-priset i den valutan. Filen är UTF-8 med BOM och semikolon som övriga
     CSV-filer, hör till samma företag och år som fakturorna, tas med i
     manifestet och kontrollsummorna och beskrivs i `LASMIG.txt`. Den skapas
     bara om året har fakturarader. Raderna läses i omgångar utan en fråga per

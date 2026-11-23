@@ -268,7 +268,7 @@ final class ArchivePackageBuilder
             ->where('invoices.status', '!=', InvoiceStatus::Draft->value)
             ->whereDate('invoices.invoice_date', '>=', $fiscalYear->start_date->toDateString())
             ->whereDate('invoices.invoice_date', '<=', $fiscalYear->end_date->toDateString())
-            ->select('invoice_rows.*', 'invoices.number as archive_number', 'invoices.invoice_date as archive_date', 'invoices.credits_invoice_id as archive_credits', 'invoices.external_ref as archive_external_ref')
+            ->select('invoice_rows.*', 'invoices.number as archive_number', 'invoices.invoice_date as archive_date', 'invoices.credits_invoice_id as archive_credits', 'invoices.external_ref as archive_external_ref', 'invoices.invoice_currency as archive_currency')
             ->with('article:id,number')
             ->orderBy('invoices.invoice_date')
             ->orderBy('invoices.number')
@@ -278,13 +278,15 @@ final class ArchivePackageBuilder
                 if ($out === null) {
                     $out = $this->open($path);
                     fwrite($out, "\xEF\xBB\xBF");
-                    fputcsv($out, [__('Fakturanummer'), __('Typ'), __('Fakturadatum'), __('Rad'), __('Artikelnummer'), __('Beskrivning'), __('Antal'), __('À-pris, kronor'), __('Prisets ursprung'), __('Förklaring av priset (JSON)')], ';', '"', '');
+                    fputcsv($out, [__('Fakturanummer'), __('Typ'), __('Fakturadatum'), __('Rad'), __('Artikelnummer'), __('Beskrivning'), __('Antal'), __('À-pris, kronor'), __('Prisets ursprung'), __('Förklaring av priset (JSON)'), __('Valuta'), __('À-pris i fakturans valuta')], ';', '"', '');
                 }
 
                 foreach ($rows as $row) {
                     $ore = $row->unit_price_ore->ore;
+                    $currency = (string) ($row->getAttribute('archive_currency') ?? 'SEK');
+                    $foreign = $currency !== 'SEK' && $row->foreign_unit_price_minor !== null ? self::decimal($row->foreign_unit_price_minor) : '';
                     $number = $row->getAttribute('archive_number');
-                    $price = ($ore < 0 ? '-' : '').intdiv(abs($ore), 100).','.str_pad((string) (abs($ore) % 100), 2, '0', STR_PAD_LEFT);
+                    $price = self::decimal($ore);
 
                     fputcsv($out, Csv::row([
                         $number !== null ? (string) $number : (string) $row->getAttribute('archive_external_ref'),
@@ -297,6 +299,8 @@ final class ArchivePackageBuilder
                         $price,
                         $row->price_source->value ?? '',
                         $row->price_explanation === null ? '' : (string) json_encode($row->price_explanation, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                        $currency,
+                        $foreign,
                     ]), ';', '"', '');
                 }
             });
@@ -309,6 +313,12 @@ final class ArchivePackageBuilder
         $this->record($path);
 
         return 1;
+    }
+
+    /** Hundredths as a plain decimal with a comma, no thousands separator: 11900 → "119,00". */
+    private static function decimal(int $hundredths): string
+    {
+        return ($hundredths < 0 ? '-' : '').intdiv(abs($hundredths), 100).','.str_pad((string) (abs($hundredths) % 100), 2, '0', STR_PAD_LEFT);
     }
 
     /**

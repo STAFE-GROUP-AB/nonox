@@ -80,6 +80,8 @@ it('puts how each invoice row was priced into the package, credit invoices too',
         ->and($lines[0])->toContain('Fakturanummer;Typ;Fakturadatum;Rad;Artikelnummer;Beskrivning;Antal;"À-pris, kronor";"Prisets ursprung"')
         ->and($lines[1])->toContain("{$invoice->number};Faktura;2026-03-02;1;;Lunchbuffé;12.000;119,00;MANUAL;")
         ->and($lines[1])->toContain(';119,00;MANUAL;')
+        ->and($lines[0])->toEndWith('Valuta;"À-pris i fakturans valuta"')
+        ->and($lines[1])->toEndWith(';SEK;')
         ->and($lines[1])->toContain('minor')
         ->and($lines[2])->toContain(';10,50;MANUAL;')
         ->and($csv)->toContain("{$credit->number};Kreditfaktura")
