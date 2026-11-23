@@ -41,6 +41,8 @@ class SigningEngineDoctorCommand extends Command
                 ));
             }
 
+            $this->line('Sandlåda: '.($health->sandboxed ? 'på (bubblewrap)' : 'av'));
+
             foreach ($health->fonts as $font => $present) {
                 $this->line(sprintf('Typsnitt %s: %s', $font, $present ? 'finns' : 'saknas'));
             }

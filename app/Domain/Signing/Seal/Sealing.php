@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Signing\Seal;
 
 use App\Domain\Signing\Pdf\PdfEngine;
+use App\Domain\Signing\Pdf\PdfEngineStatus;
 use App\Domain\Signing\Pdf\TimestampServers;
 use App\Support\Instance\InstanceSettings;
 
@@ -60,7 +61,31 @@ final class Sealing
      */
     public static function applies(int $companyId): bool
     {
-        return self::switchedOn() && app(PdfEngine::class)->isInstalled() && SealCertificates::available($companyId);
+        return self::switchedOn()
+            && app(PdfEngine::class)->isInstalled()
+            && self::sandboxProblem(checkEngine: false) === null
+            && SealCertificates::available($companyId);
+    }
+
+    /**
+     * Why sealing is unavailable because of the sandbox, or null. Only an installation that sets
+     * NONOX_PDF_ENGINE_REQUIRE_SANDBOX has such a reason: then the engine must be configured for the
+     * sandbox and, when $checkEngine, its (cached) health must say that it runs in it. The signing
+     * transaction passes false: it starts no process; the seal job checks the health.
+     */
+    public static function sandboxProblem(bool $checkEngine = true): ?string
+    {
+        if (! (bool) config('nonox.signing.pdf_engine.require_sandbox_for_seal', false)) {
+            return null;
+        }
+
+        $configured = config('nonox.signing.pdf_engine.sandbox') === 'bwrap';
+
+        if ($configured && (! $checkEngine || app(PdfEngineStatus::class)->current()->sandboxed)) {
+            return null;
+        }
+
+        return __('Försegling kräver att PDF-motorn körs i en sandlåda.');
     }
 
     /** @return list<string> the configured RFC 3161 servers, in order */

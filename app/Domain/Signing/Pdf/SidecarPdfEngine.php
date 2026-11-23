@@ -57,7 +57,13 @@ final class SidecarPdfEngine implements PdfEngine
         private readonly string $workRoot,
         private readonly int $timeoutSeconds = 60,
         private readonly int $memoryMb = 2048,
+        private readonly string $sandbox = 'none',
+        private readonly string $bwrapPath = '/usr/bin/bwrap',
     ) {
+        if (! in_array($sandbox, ['none', 'bwrap'], true)) {
+            throw new InvalidArgumentException('The sandbox must be none or bwrap.');
+        }
+
         if ($timeoutSeconds < 1 || $timeoutSeconds > 600) {
             throw new InvalidArgumentException('The timeout must be 1 to 600 seconds.');
         }
@@ -77,6 +83,8 @@ final class SidecarPdfEngine implements PdfEngine
             workRoot: (string) config('nonox.signing.pdf_engine.work_dir'),
             timeoutSeconds: (int) config('nonox.signing.pdf_engine.timeout', 60),
             memoryMb: (int) config('nonox.signing.pdf_engine.memory_mb', 2048),
+            sandbox: (string) config('nonox.signing.pdf_engine.sandbox', 'none'),
+            bwrapPath: (string) config('nonox.signing.pdf_engine.bwrap_path', '/usr/bin/bwrap'),
         );
     }
 
@@ -107,10 +115,24 @@ final class SidecarPdfEngine implements PdfEngine
             );
         }
 
+        if ($this->sandbox === 'bwrap' && ! $this->bwrapAvailable()) {
+            return new PdfEngineHealth(
+                driver: $this->driver(),
+                installed: true,
+                working: false,
+                problems: [__('Sandlådan (bubblewrap) är påslagen men hittas inte eller går inte att köra. Installera bubblewrap eller sätt NONOX_PDF_ENGINE_SANDBOX=none.')],
+                checkedAt: $checkedAt,
+            );
+        }
+
         try {
             $answer = $this->call('health', [], [], min($this->timeoutSeconds, 30));
         } catch (PdfEngineException $exception) {
-            return new PdfEngineHealth($this->driver(), true, false, problems: [$exception->getMessage()], checkedAt: $checkedAt);
+            $problem = $this->sandbox === 'bwrap'
+                ? __('PDF-motorn startar inte i sandlådan: :reason', ['reason' => $exception->getMessage()])
+                : $exception->getMessage();
+
+            return new PdfEngineHealth($this->driver(), true, false, problems: [$problem], checkedAt: $checkedAt);
         }
 
         /** @var array<string, string|int|null> $versions */
@@ -150,7 +172,34 @@ final class SidecarPdfEngine implements PdfEngine
             }
         }
 
-        return new PdfEngineHealth($this->driver(), true, $working, $versions, $fonts, $results, $problems, $checkedAt);
+        return new PdfEngineHealth($this->driver(), true, $working, $versions, $fonts, $results, $problems, $checkedAt, sandboxed: $this->sandbox === 'bwrap');
+    }
+
+    private function bwrapAvailable(): bool
+    {
+        return $this->bwrapPath !== '' && is_file($this->bwrapPath) && is_executable($this->bwrapPath);
+    }
+
+    /**
+     * What is started for one call: the helper, wrapped in bubblewrap when the
+     * sandbox is on. A configured sandbox that cannot run never falls back to
+     * running the helper without it.
+     *
+     * @return list<string>
+     */
+    private function command(string $work): array
+    {
+        $inner = [$this->python, '-I', $this->script];
+
+        if ($this->sandbox !== 'bwrap') {
+            return $inner;
+        }
+
+        if (! $this->bwrapAvailable()) {
+            throw new PdfEngineException(PdfEngineFailure::Failed, detail: 'sandbox missing');
+        }
+
+        return (new BubblewrapSandbox($this->bwrapPath, BubblewrapSandbox::pathsFor($this->python, $this->script, $this->fontsDirectory)))->command($work, $inner);
     }
 
     public function inspect(string $pdfPath): PdfInspection
@@ -569,7 +618,7 @@ final class SidecarPdfEngine implements PdfEngine
                 ->timeout($timeout)
                 ->env($this->environment($work))
                 ->input($json)
-                ->start([$this->python, '-I', $this->script], function (string $type, string $buffer) use (&$stdoutBytes, &$stderrBytes, &$overflow): void {
+                ->start($this->command($work), function (string $type, string $buffer) use (&$stdoutBytes, &$stderrBytes, &$overflow): void {
                     // Counts only; the loop below stops the process. Throwing here would leave
                     // a running process behind to call this again when it is released.
                     if ($type === SymfonyProcess::ERR) {

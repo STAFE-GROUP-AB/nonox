@@ -74,6 +74,8 @@ final class EnvelopeSealer
 
     public const string CERTIFICATE_UNREADABLE = 'CERTIFICATE_UNREADABLE';
 
+    public const string SANDBOX_REQUIRED = 'SANDBOX_REQUIRED';
+
     /** Why a seal failed, in plain Swedish, for the envelope page. */
     public static function failureLabel(string $code): string
     {
@@ -83,6 +85,7 @@ final class EnvelopeSealer
             self::FILE_CHANGED => __('det signerade dokumentet i lagringen stämde inte med sin kontrollsumma'),
             self::JOB_FAILED => __('förseglingen gick inte att slutföra'),
             self::CERTIFICATE_UNREADABLE => __('företagets förseglingscertifikat gick inte att läsa'),
+            self::SANDBOX_REQUIRED => __('PDF-motorn körs inte i en sandlåda, vilket installationen kräver för försegling'),
             default => rtrim(PdfEngineFailure::tryFrom($code)?->message() ?? __('förseglingen gick inte att slutföra'), '.'),
         };
     }
@@ -148,6 +151,10 @@ final class EnvelopeSealer
 
         if (! $this->engine->isInstalled()) {
             return $this->fail($envelope->id, PdfEngineFailure::NotInstalled->value);
+        }
+
+        if (Sealing::sandboxProblem() !== null) {
+            return $this->fail($envelope->id, self::SANDBOX_REQUIRED);
         }
 
         try {
