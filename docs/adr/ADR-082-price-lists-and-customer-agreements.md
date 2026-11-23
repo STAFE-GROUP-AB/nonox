@@ -948,6 +948,10 @@ Known and accepted at launch; none blocks the feature.
   approval queue (ADR-067), not to the margin floor.*
 - **Mass update (P6):** no `MARGIN` rule (set the price from a target margin)
   and no supplier or customer-group filters.
+- **Archive package:** the price source and explanation of issued invoice
+  rows are in the archive package as `kundfakturor/Prisuppgifter.csv`
+  (version 0.161). *Done 2026-11-23 (queue item 28 follow-up).* SIE stays
+  unchanged: it carries no prices.
 - **Open legal items:** P-L1 to P-L7 above stay `TODO(legal-verify)` until a
   lawyer has read them.
 

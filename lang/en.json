@@ -15161,5 +15161,10 @@
     "PDF-motorn startar inte i sandlådan: :reason": "The PDF engine does not start in the sandbox: :reason",
     "Sandlåda": "Sandbox",
     "På (bubblewrap)": "On (bubblewrap)",
-    "Sandlådan skulle göra programmets mapp, lagringsmappen, .env eller en hemkatalog synlig (:path). Flytta PDF-motorns Python-miljö och typsnitt, se NONOX_PDF_ENGINE_PYTHON och NONOX_PDF_ENGINE_FONTS.": "The sandbox would expose the application folder, the storage folder, .env or a home directory (:path). Move the PDF engine's Python environment and fonts, see NONOX_PDF_ENGINE_PYTHON and NONOX_PDF_ENGINE_FONTS."
+    "Sandlådan skulle göra programmets mapp, lagringsmappen, .env eller en hemkatalog synlig (:path). Flytta PDF-motorns Python-miljö och typsnitt, se NONOX_PDF_ENGINE_PYTHON och NONOX_PDF_ENGINE_FONTS.": "The sandbox would expose the application folder, the storage folder, .env or a home directory (:path). Move the PDF engine's Python environment and fonts, see NONOX_PDF_ENGINE_PYTHON and NONOX_PDF_ENGINE_FONTS.",
+    "Hur varje fakturarads pris valdes: en rad per fakturarad med fakturanummer, artikel, antal, à-pris, prisets ursprung och förklaring (JSON), samt valuta och à-pris i fakturans valuta. Finns när året har fakturor med rader.": "How each invoice row's price was chosen: one line per invoice row with invoice number, article, quantity, unit price, where the price came from and an explanation (JSON), plus the currency and the unit price in the invoice currency. Present when the year has invoices with rows.",
+    "À-pris, kronor": "Unit price, kronor",
+    "Prisets ursprung": "Price source",
+    "Förklaring av priset (JSON)": "Price explanation (JSON)",
+    "À-pris i fakturans valuta": "Unit price in the invoice currency"
 }

@@ -15,6 +15,7 @@ sie/  {!! __('Hela årets bokföring i SIE4-format: kontoplan, balanser och alla
 rapporter/  {!! __('Saldobalans, resultatrapport, balansrapport, huvudbok och verifikationslista för hela året, som PDF och CSV (:count filer).', ['count' => $contents['rapporter']]) !!}
 verifikationer/  {!! __('Underlagen till verifikationerna, en mapp per verifikation, till exempel A12 (:count filer).', ['count' => $contents['underlag']]) !!}
 kundfakturor/  {!! __('Kundfakturor och kreditfakturor som PDF (:count filer).', ['count' => $contents['kundfakturor']]) !!}
+kundfakturor/Prisuppgifter.csv  {!! __('Hur varje fakturarads pris valdes: en rad per fakturarad med fakturanummer, artikel, antal, à-pris, prisets ursprung och förklaring (JSON), samt valuta och à-pris i fakturans valuta. Finns när året har fakturor med rader.') !!}
 @if(($contents['koncernleveranser'] ?? 0) > 0)
 kundfakturor/koncernleveranser/  {!! __('Fakturor som levererades till ett annat koncernföretags inkorg i NONOX, som den e-fakturafil (Peppol BIS Billing 3.0) som lämnade företaget (:count filer).', ['count' => $contents['koncernleveranser']]) !!}
 @endif
