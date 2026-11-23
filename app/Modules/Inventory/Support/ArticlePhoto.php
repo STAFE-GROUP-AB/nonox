@@ -8,7 +8,6 @@ use App\Modules\Ai\Support\HeicImage;
 use GdImage;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\ValidationException;
-use Imagick;
 use ImagickException;
 
 /**
@@ -137,7 +136,7 @@ final class ArticlePhoto
         }
 
         try {
-            $image = new Imagick($path);
+            $image = HeicImage::read($path);
             $image->setIteratorIndex(0);
             $image->autoOrient();
             $image->stripImage();

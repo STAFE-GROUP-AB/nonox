@@ -17,6 +17,9 @@ final class HeicImage
 
     private const int QUALITY = 90;
 
+    /** The major brands a HEIF or HEIC file declares in its ftyp box. */
+    private const array BRANDS = ['heic', 'heix', 'heim', 'heis', 'hevc', 'hevx', 'hevm', 'hevs', 'mif1', 'msf1'];
+
     public static function is(string $mime): bool
     {
         return in_array(strtolower($mime), self::TYPES, true);
@@ -40,7 +43,7 @@ final class HeicImage
         }
 
         try {
-            $image = new Imagick($path);
+            $image = self::read($path);
             $image->setIteratorIndex(0);
             $image->autoOrient();
             $image->stripImage();
@@ -53,5 +56,34 @@ final class HeicImage
         }
 
         return base64_encode($jpeg);
+    }
+
+    /**
+     * Opens the file with ImageMagick's HEIC decoder only. Left to itself,
+     * ImageMagick picks a decoder from the file's content, so an SVG or any
+     * other format named .heic would be parsed by that format's decoder. The
+     * file must also begin like a HEIF file (an ISO base media "ftyp" box
+     * with a HEIF brand) before ImageMagick sees it.
+     *
+     * @throws ImagickException when the file is not HEIF or cannot be read
+     */
+    public static function read(string $path): Imagick
+    {
+        if (! self::looksLikeHeif($path)) {
+            throw new ImagickException('Not a HEIF file.');
+        }
+
+        return new Imagick("HEIC:{$path}");
+    }
+
+    public static function looksLikeHeif(string $path): bool
+    {
+        $head = @file_get_contents($path, false, null, 0, 12);
+
+        if (! is_string($head) || strlen($head) < 12 || substr($head, 4, 4) !== 'ftyp') {
+            return false;
+        }
+
+        return in_array(substr($head, 8, 4), self::BRANDS, true);
     }
 }

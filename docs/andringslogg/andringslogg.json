@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-23-heic-avkodare",
+      "datum": "2026-11-23T01:05:00+01:00",
+      "rubrik": "iPhone-bilder läses bara som riktiga HEIC-filer",
+      "beskrivning": "En bild som laddas upp som HEIC läses nu bara om filen verkligen är en HEIC-fil, och bara med HEIC-avkodaren. En fil i ett annat format som fått namnet .heic avvisas. Det gäller artikelbilder och kvitton som tolkas av NONOX AI.",
+      "typ": "Säkerhet",
+      "omrade": "Kvalitet"
+    },
+    {
       "id": "2026-11-22-signering-lansering",
       "datum": "2026-11-22T21:52:00+01:00",
       "rubrik": "Signering av egna dokument: samlad manual och startsida",
