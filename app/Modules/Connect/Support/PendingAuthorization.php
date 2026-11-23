@@ -10,6 +10,7 @@ use Laravel\Passport\Bridge\Scope;
 use Laravel\Passport\Bridge\User;
 use League\OAuth2\Server\RequestTypes\AuthorizationRequest;
 use League\OAuth2\Server\RequestTypes\AuthorizationRequestInterface;
+use Throwable;
 
 /**
  * An app's validated authorization request, waiting in the session for the
@@ -21,6 +22,15 @@ final class PendingAuthorization
     private const string KEY = 'connect.pending';
 
     private const int TTL_SECONDS = 600;
+
+    /**
+     * The only classes unserialize() may build from the session. The request
+     * is stored as a PHP-serialized string, so this list is what keeps a
+     * tampered session from building any other object. Keep it this short,
+     * and keep it whatever session store or serialization is used; a test
+     * pins it.
+     */
+    public const array ALLOWED_CLASSES = [AuthorizationRequest::class, Client::class, Scope::class, User::class];
 
     public static function put(AuthorizationRequestInterface $authRequest): string
     {
@@ -42,7 +52,11 @@ final class PendingAuthorization
             return null;
         }
 
-        $authRequest = unserialize($pending['request'], ['allowed_classes' => [AuthorizationRequest::class, Client::class, Scope::class, User::class]]);
+        try {
+            $authRequest = unserialize($pending['request'], ['allowed_classes' => self::ALLOWED_CLASSES]);
+        } catch (Throwable) {
+            return null;
+        }
 
         return $authRequest instanceof AuthorizationRequestInterface ? $authRequest : null;
     }

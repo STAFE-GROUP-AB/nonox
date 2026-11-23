@@ -6,9 +6,15 @@ use App\Models\AuditLog;
 use App\Modules\Connect\Livewire\ConsentScreen;
 use App\Modules\Connect\Models\ConnectGrant;
 use App\Modules\Connect\OAuth\GrantTokens;
+use App\Modules\Connect\Support\PendingAuthorization;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Fluent;
+use Laravel\Passport\Bridge\Client;
+use Laravel\Passport\Bridge\Scope;
+use Laravel\Passport\Bridge\User;
+use League\OAuth2\Server\RequestTypes\AuthorizationRequest;
 use Livewire\Livewire;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Connect;
@@ -191,4 +197,31 @@ it('keeps tokens apart: each token row names its grant', function () {
 
     expect(DB::table('oauth_access_tokens')->whereNull('connect_grant_id')->count())->toBe(0)
         ->and(DB::table('oauth_refresh_tokens')->whereNull('connect_grant_id')->count())->toBe(0);
+});
+
+it('builds only the pinned classes when it reads a pending request back from the session', function () {
+    expect(PendingAuthorization::ALLOWED_CLASSES)->toBe([
+        AuthorizationRequest::class,
+        Client::class,
+        Scope::class,
+        User::class,
+    ]);
+
+    $token = str_repeat('a', 40);
+    $foreign = new Fluent(['probe' => true]);
+    session()->put("connect.pending.{$token}", ['request' => serialize($foreign), 'expires_at' => time() + 60]);
+
+    expect(PendingAuthorization::get($token))->toBeNull();
+
+    $request = new AuthorizationRequest;
+    $other = new Fluent(['probe' => true]);
+    $request->setUser(new User('1'));
+    $tampered = str_replace(serialize(new User('1')), serialize($other), serialize($request));
+    session()->put("connect.pending.{$token}", ['request' => $tampered, 'expires_at' => time() + 60]);
+
+    expect(PendingAuthorization::get($token))->toBeNull();
+
+    session()->put("connect.pending.{$token}", ['request' => 'O:8:"stdClass":0:{', 'expires_at' => time() + 60]);
+
+    expect(PendingAuthorization::get($token))->toBeNull();
 });
