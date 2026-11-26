@@ -117,3 +117,30 @@ it('finds the held documents in the same number of queries for 1 and for 30 quot
 
     expect($count(30))->toBe($short);
 });
+
+it('checks only the quotes on the page: the portal list costs the same queries for a short and a long history', function () {
+    Portal::signIn($this, $this->contact);
+
+    $measure = function (int $quotes): array {
+        foreach (range(1, $quotes) as $i) {
+            pf7Quote('90,00')->forceFill(['sent_at' => now()])->save();
+        }
+
+        $this->get(route('portal.quotes', ['portalKey' => $this->key]))->assertOk();
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        $this->get(route('portal.quotes', ['portalKey' => $this->key]))->assertOk();
+        $log = DB::getQueryLog();
+        DB::disableQueryLog();
+
+        $rowQueries = array_values(array_filter($log, fn (array $query): bool => str_contains($query['query'], 'sales_document_rows')));
+
+        return [count($log), count($rowQueries[0]['bindings'] ?? [])];
+    };
+
+    [$shortQueries] = $measure(3);
+    [$longQueries, $rowIds] = $measure(40);
+
+    expect($longQueries)->toBe($shortQueries)
+        ->and($rowIds)->toBeLessThanOrEqual(26);
+});

@@ -572,3 +572,35 @@ it('warns in the daily run for every draft held back, and counts it', function (
         ->expectsOutputToContain('1 hölls som utkast')
         ->assertSuccessful();
 });
+
+it('keeps each row\'s own price source when a re-save has two rows with the same article and price (ADR-082 follow-up)', function () {
+    $world = vipWorld($this);
+    $manual = [...articleRow('A1', '1', '100,00'), 'price_source' => 'MANUAL'];
+    $agreement = agreementFor($this, $world->customer, [$manual, articleRow('A1', '1', '100,00')], 'FOLLOW_PRICES');
+
+    $sources = fn (): array => $agreement->fresh()->rows()->orderBy('position')->get()->map(fn ($row): ?string => $row->price_source?->value)->all();
+
+    expect($sources())->toBe(['MANUAL', null]);
+
+    $agreement = app(SaveRecurringInvoice::class)($this->owner, $this->company, [
+        'customer_id' => $world->customer->id, 'name' => 'Abonnemang', 'interval_months' => 1, 'next_invoice_date' => '2026-06-15',
+        'rows' => [$manual, articleRow('A1', '1', '100,00')],
+    ], $agreement);
+
+    expect($sources())->toBe(['MANUAL', null]);
+
+    // The same, with the rows the other way round.
+    $agreement = app(SaveRecurringInvoice::class)($this->owner, $this->company, [
+        'customer_id' => $world->customer->id, 'name' => 'Abonnemang', 'interval_months' => 1, 'next_invoice_date' => '2026-06-15',
+        'rows' => [articleRow('A1', '1', '100,00'), $manual],
+    ], $agreement);
+
+    expect($sources())->toBe([null, 'MANUAL']);
+
+    $agreement = app(SaveRecurringInvoice::class)($this->owner, $this->company, [
+        'customer_id' => $world->customer->id, 'name' => 'Abonnemang', 'interval_months' => 1, 'next_invoice_date' => '2026-06-15',
+        'rows' => [articleRow('A1', '1', '100,00'), $manual],
+    ], $agreement);
+
+    expect($sources())->toBe([null, 'MANUAL']);
+});

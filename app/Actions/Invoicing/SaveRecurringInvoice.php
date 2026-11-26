@@ -22,6 +22,7 @@ use App\Modules\Peppol\PeppolModule;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
@@ -170,7 +171,8 @@ class SaveRecurringInvoice
         }
 
         $base = Article::query()->whereIn('id', $articleIds)->get(['id', 'company_id', 'price_ore'])->mapWithKeys(fn (Article $article): array => [$article->id => $article->price_ore->ore]);
-        $stored = $agreement?->exists === true ? $agreement->rows()->whereIn('article_id', $articleIds)->get() : collect();
+        $stored = $agreement?->exists === true ? $agreement->rows()->whereIn('article_id', $articleIds)->orderBy('position')->get() : collect();
+        $used = [];
 
         foreach ($rows as $index => $row) {
             if ($row['article_id'] === null) {
@@ -179,9 +181,10 @@ class SaveRecurringInvoice
 
             $price = (int) $row['unit_price_ore'];
             $typedManual = ($input[$index]['price_source'] ?? '') === PriceSource::Manual->value;
-            $same = $stored->first(fn (RecurringInvoiceRow $old): bool => $old->article_id === $row['article_id'] && $old->unit_price_ore->ore === $price);
+            $same = $this->storedRowFor($stored, $index, $row['article_id'], $price, $typedManual, $used);
 
             if ($same !== null && ($same->price_source === PriceSource::Manual || ! $typedManual)) {
+                $used[$same->id] = true;
                 $rows[$index] = [...$row, 'price_source' => $same->price_source?->value, 'price_explanation' => $same->price_explanation];
 
                 continue;
@@ -192,5 +195,28 @@ class SaveRecurringInvoice
         }
 
         return $rows;
+    }
+
+    /**
+     * The stored row a sent row corresponds to. By row identity, not by
+     * article and price: of the unclaimed stored rows with the same article
+     * and price, the one at the same position, preferring one whose source
+     * agrees with what the row says (typed MANUAL or not), so rows that were
+     * moved keep their own source. A stored row is claimed once, so two rows
+     * with the same article and price each keep their own source instead of
+     * both taking the first one's.
+     *
+     * @param  Collection<int, RecurringInvoiceRow>  $stored
+     * @param  array<int, true>  $used  stored row ids already claimed
+     */
+    private function storedRowFor(Collection $stored, int $index, int $articleId, int $price, bool $typedManual, array $used): ?RecurringInvoiceRow
+    {
+        $candidates = $stored->filter(fn (RecurringInvoiceRow $old): bool => ! isset($used[$old->id]) && $old->article_id === $articleId && $old->unit_price_ore->ore === $price);
+        $agrees = fn (RecurringInvoiceRow $old): bool => ($old->price_source === PriceSource::Manual) === $typedManual;
+
+        return $candidates->first(fn (RecurringInvoiceRow $old): bool => $old->position === $index && $agrees($old))
+            ?? $candidates->first($agrees)
+            ?? $candidates->first(fn (RecurringInvoiceRow $old): bool => $old->position === $index)
+            ?? $candidates->first();
     }
 }
