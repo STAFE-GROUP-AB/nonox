@@ -35,7 +35,7 @@
       "id": "2026-11-26-prisrader-moms-sparad-rad",
       "datum": "2026-11-26T19:45:00+01:00",
       "rubrik": "Ändrad moms på en sparad rad med pris inklusive moms",
-      "beskrivning": "Ändrar du momssatsen på en sparad rad vars pris kommer från en prislista med priser inklusive moms räknas priset utan moms om från listans pris när du sparar, så att kunden aldrig betalar mer än listans pris. Raden visar *Priset hämtas när du sparar.* tills dess. Ett pris du har skrivit själv och rader från listor utan moms ändras inte.",
+      "beskrivning": "Ändrar du momssatsen på en sparad rad vars pris kommer från en prislista med priser inklusive moms räknas priset utan moms om när du sparar, från det pris inklusive moms som raden fick, så att kunden aldrig betalar mer än det priset. Raden visar *Priset hämtas när du sparar.* tills dess. Ett pris du har skrivit själv och rader från listor utan moms ändras inte.",
       "typ": "Rättat",
       "omrade": "Fakturering"
     },
