@@ -4,8 +4,8 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.161
-- Datum: 2026-11-23
+- Version: 0.162
+- Datum: 2026-11-26
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
   kontroll av huvudboken, ingående balanser, SIE-export och SIE-import,
@@ -2217,6 +2217,12 @@ balances").
   pris som visas: en rad vars pris skiljer sig från det nya sparas som
   `MANUAL`, en rad med samma pris får prismotorns källa. Nya priser kommer
   bara med "Uppdatera priser", som först visar skillnaden rad för rad.
+  Undantag: en sparad rad från en prislista med priser inklusive moms
+  (förklaringen har `gross_minor`) vars momssats ändras får à-priset
+  uträknat på nytt av det sparade bruttopriset med den nya momssatsen,
+  avrundat nedåt, med källan kvar. Det är bruttopriset kunden fick se som
+  gäller, inte dagens listpris. Ett pris som skrivits för hand och en rad
+  från en lista utan moms rörs inte. TODO(legal-verify): P-L1.
   Offert → order → faktura behåller offertens priser, källor och valuta;
   för en offert vars giltighetstid har gått ut väljer användaren "Behåll
   offertens priser" (förval) eller "Hämta dagens priser" efter att
@@ -7158,3 +7164,4 @@ påverkar bokföringen och fakturan:
 | 0.159 | 2026-11-22 | Långtidsvalidering av förseglade filer (ADR-046 tillägg, lucka 5, paket S11): efter en försegling med tidsstämpel läggs valideringsdata till (PAdES B-LT), och `signing:timestamp` lägger varje natt till en dokumenttidsstämpel (PAdES B-LTA) innan den senaste tidsstämpeln slutar vara tillförlitlig, bara inom bevarandetiden eller under bevarandespärr; varje fil är en inkrementell uppdatering som sparas som `TIMESTAMPED` i `signing_document_versions`. Avstängd så länge försegling är avstängd. Ingenting bokförs och ingen verifikation, numrering eller hashkedja ändras. |
 | 0.160 | 2026-11-22 | Underskrift hos extern tjänst (ADR-046 tillägg, lucka 12, paket S17): en undertecknare kan skriva under hos en tjänst med Cloud Signature Consortiums API v2 som företaget har lagt in; underskriften (PAdES) läggs in i undertecknarens version, som sparas som `AFTER_SIGNER`, och hashkedjan får `PROVIDER_SIGNED`. Avstängd tills den slås på för installationen. Ingenting bokförs och ingen verifikation, numrering eller hashkedja för bokföringen ändras. |
 | 0.161 | 2026-11-23 | Arkivpaketet får `kundfakturor/Prisuppgifter.csv` (avsnitt 7a, ADR-082 §5): hur varje fakturarads pris valdes (`price_source`, `price_explanation`) för årets utfärdade kund- och kreditfakturor, med kontrollsumma i manifestet. Ingenting bokförs och ingen verifikation, numrering eller hashkedja ändras; SIE är oförändrad. |
+| 0.162 | 2026-11-26 | Priser inklusive moms (ADR-082): en sparad rad från en prislista med priser inklusive moms vars momssats ändras får à-priset uträknat på nytt av det sparade bruttopriset med den nya momssatsen (avrundat nedåt, källan kvar), så att en konsument aldrig betalar mer än listpriset. Ett pris som skrivits för hand och rader från listor utan moms ändras inte. Ingenting bokförs och ingen verifikation, numrering eller hashkedja ändras. |

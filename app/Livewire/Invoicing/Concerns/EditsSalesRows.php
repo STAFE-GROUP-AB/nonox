@@ -202,6 +202,7 @@ trait EditsSalesRows
                 'price_source' => $change['price_source'],
                 'price_explanation' => $change['price_explanation'],
                 'price_warnings' => $change['price_warnings'],
+                'price_gross_vat' => '',
             ];
         }
 
@@ -527,7 +528,8 @@ trait EditsSalesRows
         $result = [];
         $register = UnitRegister::load();
         // The explanation names lists and agreements by id: only for a person who may see where prices come from.
-        $explains = $this->pricingContext() !== null && $this->canViewPrices();
+        $pricing = $this->pricingContext() !== null;
+        $explains = $pricing && $this->canViewPrices();
 
         foreach ($rows as $row) {
             $input = method_exists($row, 'asInput') ? $row->asInput() : [];
@@ -539,6 +541,9 @@ trait EditsSalesRows
                 $input['row_id'] = (string) $row->getKey();
             }
 
+            // A price from a list including VAT is worked out again when the row's VAT rate changes: the rate as loaded, no amount (ADR-082).
+            $fromGross = $pricing && is_array($explanation) && is_numeric($explanation['gross_minor'] ?? null) && ($input['price_source'] ?? '') !== PriceSource::Manual->value;
+            $input['price_gross_vat'] = $fromGross ? (string) ($input['vat_rate'] ?? '') : '';
             $input['price_warnings'] = is_array($explanation) ? implode(',', array_filter((array) ($explanation['warnings'] ?? []), is_string(...))) : '';
 
             if (($input['unit_id'] ?? '') === '' && is_string($input['unit'] ?? null)) {
@@ -570,6 +575,6 @@ trait EditsSalesRows
     /** @return array<string, string> */
     private function blankRow(): array
     {
-        return ['article' => '', 'description' => '', 'quantity' => '1', 'unit_id' => (string) UnitRegister::load()->default()->id, 'price' => '', 'discount' => '', 'vat_rate' => '2500', 'account' => '', 'cost_center' => '', 'project' => '', 'price_source' => '', 'price_explanation' => '', 'price_warnings' => ''];
+        return ['article' => '', 'description' => '', 'quantity' => '1', 'unit_id' => (string) UnitRegister::load()->default()->id, 'price' => '', 'discount' => '', 'vat_rate' => '2500', 'account' => '', 'cost_center' => '', 'project' => '', 'price_source' => '', 'price_explanation' => '', 'price_warnings' => '', 'price_gross_vat' => ''];
     }
 }

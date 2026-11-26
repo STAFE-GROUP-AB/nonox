@@ -16,7 +16,7 @@ import { formatOre } from './money.js';
 import { rowNet, totals } from './sales-math.js';
 import { ratePercent, salesRowVatWarnings } from './vat-rate-check.js';
 import { marginPayload, marginSignature } from './margin-check.js';
-import { afterContextChange, fromTier, quantityMilli, shouldFillPrice, shouldReprice, tierFor } from './price-table.js';
+import { afterContextChange, fromTier, grossVatChanged, quantityMilli, shouldFillPrice, shouldReprice, tierFor } from './price-table.js';
 
 /** The rows the price table priced in this editing session: never a row loaded from a saved document (kept outside the reactive data). */
 const sessionPriced = new WeakSet();
@@ -30,7 +30,7 @@ function rowKey(row) {
  * with the customer's default cost centre and project (ADR-081 gap 6).
  */
 function blankRow(unitId, defaults = {}) {
-    return { article: '', description: '', quantity: '1', unit_id: unitId, price: '', discount: '', vat_rate: '2500', account: '', cost_center: defaults.cost_center ?? '', project: defaults.project ?? '', price_source: '', price_explanation: '', price_warnings: '' };
+    return { article: '', description: '', quantity: '1', unit_id: unitId, price: '', discount: '', vat_rate: '2500', account: '', cost_center: defaults.cost_center ?? '', project: defaults.project ?? '', price_source: '', price_explanation: '', price_warnings: '', price_gross_vat: '' };
 }
 
 document.addEventListener('alpine:init', () => {
@@ -195,6 +195,12 @@ document.addEventListener('alpine:init', () => {
             row.price_source = String(row.price ?? '').trim() === '' ? '' : 'MANUAL';
             row.price_explanation = '';
             row.price_warnings = '';
+            row.price_gross_vat = '';
+        },
+
+        /** A saved row priced from a list including VAT, with a new VAT rate: its price is worked out again when saved. */
+        priceFollowsVat(row) {
+            return grossVatChanged(row);
         },
 
         rememberArticle(index) {

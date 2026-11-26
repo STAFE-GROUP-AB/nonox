@@ -76,7 +76,7 @@ export function consumerNet(grossMinor, vatBp) {
  */
 export function fromTier(tier, vatRate = null) {
     if (!tier) {
-        return { price: '', price_source: '', price_warnings: '', price_explanation: '' };
+        return { price: '', price_source: '', price_warnings: '', price_explanation: '', price_gross_vat: '' };
     }
 
     // A price from a list including VAT is worked out from its gross price with the row's own VAT rate, as the server does.
@@ -88,7 +88,21 @@ export function fromTier(tier, vatRate = null) {
         price_source: tier.source || 'AUTO',
         price_warnings: (tier.warnings ?? []).join(','),
         price_explanation: '',
+        price_gross_vat: '',
     };
+}
+
+/**
+ * A row loaded from a saved document whose price came from a list including
+ * VAT, with a VAT rate changed since: the browser keeps the price shown, and
+ * the server works it out again from the stored gross price when the document
+ * is saved. price_gross_vat is the row's VAT rate as loaded (empty for any
+ * other row, and cleared when the price is fetched or typed in this session).
+ */
+export function grossVatChanged(row) {
+    const loaded = String(row?.price_gross_vat ?? '');
+
+    return loaded !== '' && String(row.vat_rate ?? '') !== loaded && !!row.price_source && row.price_source !== 'MANUAL';
 }
 
 /**
