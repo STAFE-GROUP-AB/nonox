@@ -964,6 +964,17 @@ Known and accepted at launch; none blocks the feature.
   5. The customer's price screen showed the resolver's net price (rounded half
      up) while the editors round down. It now shows `DocumentPricing`'s price,
      so both agree to the öre (10,01 kr including 25 % VAT: 8,00 kr).
+- **VAT rate changed on a saved gross-priced row (open, found 2026-11-26):**
+  the snapshot match (rule 4) compares article, unit, quantity, price,
+  discount and currency but not the VAT rate. A saved row from a list
+  including VAT (10,01 kr, 9,44 kr net at 6 %) that is changed to 25 % keeps
+  9,44 kr net, so the customer pays 11,80 kr including VAT, and the kept
+  explanation still says the customer never pays more than the list price.
+  This predates the P3 follow-ups. Proposed fix: include `vat_rate` in the
+  snapshot match for rows whose explanation carries `gross_minor`, so such a
+  row is priced again at the new rate on save.
+  `TODO(legal-verify)`: part of P-L1 — when a correction of the VAT rate
+  should change the price a consumer was shown.
 - **Campaigns have no channel field:** a campaign cannot be aimed at one sales
   channel; only channel lists can. *Owner decision 2026-11-22: build it (P11
   below). P11 is built.*
