@@ -98,7 +98,7 @@ trait EditsSalesRows
      * source.
      *
      * @param  array<int, mixed>  $numbers
-     * @return array<string, array{unit_id: ?int, tiers: list<array{min: int, price: ?int, source: string, warnings: list<string>}>}>
+     * @return array<string, array{unit_id: ?int, tiers: list<array{min: int, price: ?int, gross?: int, source: string, warnings: list<string>}>}>
      */
     #[Renderless]
     public function priceTable(array $numbers = []): array

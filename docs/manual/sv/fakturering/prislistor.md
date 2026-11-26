@@ -86,6 +86,8 @@ En grupp som har kunder, eller som en kampanj riktas mot, går inte att arkivera
 
 Öppna en kund under **Register → Kunder** och tryck på fliken **Priser**. Där väljer du kundens **Kundgrupp** och en **Egen prislista**. Kundens egen lista går före gruppens. Under **Kundens pris idag** ser du vad varje artikel kostar för just den kunden i dag, vid antal 1, och varifrån priset kommer: kundens prislista, en kampanj, valutans lista eller grundpriset. Är ett pris omräknat från kronor, eller saknas det, står det på raden.
 
+Priset är à-priset utan moms, med en eventuell rabatt inräknad, så som det blir på en fakturarad. Gäller en rabatt står den under priset, till exempel *efter −10 % avtalsrabatt*. Kommer priset från en lista med priser inklusive moms räknas à-priset ut med artikelns momssats och avrundas nedåt till hela öre.
+
 ![Kundens flik Priser med grupp, egen lista och dagens pris per artikel.](/bilder/manual/fakturering/prislistor-kund.webp)
 
 ## Artikelns flik Priser

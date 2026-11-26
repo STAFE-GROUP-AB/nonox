@@ -91,6 +91,22 @@ export function fromTier(tier, vatRate = null) {
     };
 }
 
+/**
+ * Whether a field change on a row re-prices it by itself (ADR-082 §6). Only a
+ * row whose price the table gave in this editing session is ever re-priced: a
+ * row loaded from a saved document keeps its price until "Uppdatera priser".
+ * A new quantity or unit re-prices such a row; a new VAT rate does only when
+ * the step carries a gross price (a list including VAT), as the VAT rate
+ * then changes the net price.
+ */
+export function shouldReprice(row, pricedThisSession, trigger, tier) {
+    if (!pricedThisSession || !String(row?.article ?? '').trim() || !row.price_source || row.price_source === 'MANUAL' || !tier) {
+        return false;
+    }
+
+    return trigger !== 'vat' || (tier.gross !== null && tier.gross !== undefined);
+}
+
 /** Whether leaving the article field fills the price: only for an empty price or a new article, never over a typed or kept price. */
 export function shouldFillPrice(row, articleChanged) {
     return articleChanged || String(row.price ?? '').trim() === '';

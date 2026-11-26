@@ -12,6 +12,7 @@ use App\Livewire\Pricing\CustomerPrices;
 use App\Models\Article;
 use App\Models\Invoice;
 use App\Models\PriceAgreementItem;
+use App\Models\PriceListItem;
 use App\Models\SalesDocument;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -85,12 +86,18 @@ it('previewing today\'s prices for an expired quote changes no editor state', fu
 });
 
 it('prices a document in a fixed number of queries whatever the number of rows, in every editor', function () {
-    $template = Article::query()->where('number', 'A1')->firstOrFail();
+    $agreed = Article::query()->where('number', 'A1')->firstOrFail();
+    $gross = Article::query()->where('number', 'B1')->firstOrFail();
 
+    // Half the articles are priced by the agreement, half by the list including VAT.
     foreach (range(2, 120) as $i) {
-        $copy = $template->replicate();
+        $copy = ($i % 2 === 0 ? $gross : $agreed)->replicate();
         $copy->number = "N{$i}";
         $copy->save();
+
+        if ($i % 2 === 0) {
+            PriceListItem::create(['price_list_id' => $this->scenario->lists['BRUTTO'], 'article_id' => $copy->id, 'min_quantity_milli' => 0, 'price_minor' => 1000 + $i]);
+        }
     }
 
     $rows = fn (int $count): array => array_map(fn (int $i): array => followupRow(['article' => $i === 1 ? 'A1' : "N{$i}", 'description' => "Rad {$i}"]), range(1, $count));
@@ -156,7 +163,80 @@ it('shows the same net price on the customer\'s price screen as the editors give
 
     expect($draft->rows->first()->unit_price_ore->ore)->toBe(800);
 
-    Livewire::test(CustomerPrices::class, ['customerId' => $this->customer->id])
-        ->assertSee('8,00')
-        ->assertDontSee('8,01');
+    $cells = fn (string $number): array => customerTabCells($this->customer->id, $number);
+
+    expect($cells('B1')['price'])->toBe('8,00 kr')
+        ->and($cells('B1')['note'])->toBe('');
 });
+
+it('shows the agreed discount on the customer\'s price screen as included in the price', function () {
+    $agreement = PricingScenario::build([
+        'articles' => ['D1' => ['price_ore' => 10000]],
+        'agreements' => ['DA' => ['valid_from' => '2026-01-01', 'items' => [['article' => 'D1', 'discount_bp' => 1000]]]],
+        'customer' => [],
+    ]);
+    $this->actingAs($agreement->owner);
+
+    // 100 kr with 10 % agreed: 90,00 kr, the row price an invoice gets, with the discount named as agreed.
+    $cells = customerTabCells($agreement->customer->id, 'D1');
+
+    expect($cells['price'])->toBe('90,00 kr')
+        ->and($cells['note'])->toBe('efter −10 % avtalsrabatt');
+});
+
+it('combines a discount and a price including VAT on the customer\'s price screen, rounded down like the editors', function () {
+    $both = PricingScenario::build([
+        'articles' => ['G1' => ['price_ore' => 80000]],
+        'lists' => ['BRUTTO' => ['default' => true, 'prices_include_vat' => true, 'items' => [['article' => 'G1', 'price_minor' => 1001]]]],
+        'agreements' => ['GA' => ['valid_from' => '2026-01-01', 'items' => [['article' => 'G1', 'discount_bp' => 1000]]]],
+        'customer' => [],
+    ]);
+    $this->actingAs($both->owner);
+
+    // 10,01 kr including VAT less 10 %: 9,009 → 9,00 gross, then 7,20 net. Half up on either step would give 7,21.
+    $draft = app(SaveDraftInvoice::class)($both->owner, $both->company, ['customer_id' => $both->customer->id, 'invoice_date' => '2026-03-15', 'rows' => [followupRow(['article' => 'G1', 'description' => 'G1'])]]);
+    $cells = customerTabCells($both->customer->id, 'G1');
+
+    expect($draft->rows->first()->unit_price_ore->ore)->toBe(720)
+        ->and($cells['price'])->toBe('7,20 kr')
+        ->and($cells['note'])->toContain('−10 %');
+});
+
+it('keeps a saved row\'s price and source when its VAT rate is corrected and saved again', function () {
+    $draft = app(SaveDraftInvoice::class)($this->owner, $this->company, ['customer_id' => $this->customer->id, 'invoice_date' => '2026-03-15', 'rows' => [followupRow()]]);
+    $source = $draft->rows->first()->price_source;
+
+    $again = app(SaveDraftInvoice::class)($this->owner, $this->company, ['customer_id' => $this->customer->id, 'invoice_date' => '2026-03-15', 'rows' => [
+        followupRow(['vat_rate' => 1200, 'price' => '8,00', 'price_source' => $source->value]),
+    ]], $draft);
+
+    expect($again->rows->first()->unit_price_ore->ore)->toBe(800)
+        ->and($again->rows->first()->price_source)->toBe($source);
+});
+
+/**
+ * The customer tab's cells for an article: the price and the line under it.
+ *
+ * @return array{price: string, note: string}
+ */
+function customerTabCells(int $customerId, string $number): array
+{
+    $html = Livewire::test(CustomerPrices::class, ['customerId' => $customerId])->html();
+    $dom = new DOMDocument;
+    @$dom->loadHTML('<?xml encoding="utf-8" ?>'.$html);
+
+    foreach ((new DOMXPath($dom))->query('//tr[starts-with(@*[name()="wire:key"], "preview-")]') ?: [] as $row) {
+        $cells = (new DOMXPath($dom))->query('td', $row);
+
+        if (! str_starts_with(trim((string) $cells->item(0)?->textContent), $number)) {
+            continue;
+        }
+
+        $note = (new DOMXPath($dom))->query('.//span[contains(@class, "block")]', $cells->item(2));
+        $price = trim(preg_replace('/\s+/u', ' ', explode("\n", trim((string) $cells->item(2)?->textContent))[0]) ?? '');
+
+        return ['price' => str_replace("\u{a0}", ' ', $price), 'note' => $note->length > 0 ? trim((string) $note->item(0)?->textContent) : ''];
+    }
+
+    throw new RuntimeException("No row for {$number}.");
+}

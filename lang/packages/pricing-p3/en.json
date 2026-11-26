@@ -22,6 +22,7 @@
     "Listans pris är :gross inklusive moms. À-priset utan moms är uträknat från det med radens momssats och avrundat nedåt till hela öre, så att kunden aldrig betalar mer än listans pris.": "The list price is :gross including VAT. The unit price excluding VAT is worked out from it with the row's VAT rate and rounded down to a whole öre, so the customer never pays more than the list price.",
     "Listans pris är :gross inklusive moms. Raden visar à-priset utan moms.": "The list price is :gross including VAT. The row shows the unit price excluding VAT.",
     "efter −:percent % avtalsrabatt": "after −:percent % agreed discount",
+    "efter −:percent % rabatt": "after −:percent % discount",
     "Priset är räknat fram från en annan prislista.": "The price is derived from another price list.",
     "Omräknat med kursen :rate kronor från :date.": "Converted at the rate of :rate kronor from :date.",
     "Den avtalade rabatten :percent ingår i à-priset, eftersom raden har en egen rabatt.": "The agreed discount of :percent is included in the unit price, because the row has a discount of its own.",

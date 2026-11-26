@@ -16,7 +16,14 @@ import { formatOre } from './money.js';
 import { rowNet, totals } from './sales-math.js';
 import { ratePercent, salesRowVatWarnings } from './vat-rate-check.js';
 import { marginPayload, marginSignature } from './margin-check.js';
-import { afterContextChange, fromTier, quantityMilli, shouldFillPrice, tierFor } from './price-table.js';
+import { afterContextChange, fromTier, quantityMilli, shouldFillPrice, shouldReprice, tierFor } from './price-table.js';
+
+/** The rows the price table priced in this editing session: never a row loaded from a saved document (kept outside the reactive data). */
+const sessionPriced = new WeakSet();
+
+function rowKey(row) {
+    return window.Alpine?.raw ? window.Alpine.raw(row) : row;
+}
 
 /**
  * A new row, in the company's default unit (a unit of its register, by id),
@@ -161,13 +168,20 @@ document.addEventListener('alpine:init', () => {
         /** Takes the row's price from the table; a discount typed on the row stays. A row the table cannot price gets its price when saved. */
         priceFromTable(row) {
             Object.assign(row, fromTier(this.tier(row), row.vat_rate));
+
+            if (row.price_source) {
+                sessionPriced.add(rowKey(row));
+            }
         },
 
-        /** A new quantity or unit re-prices a row whose price came from the table, never one typed by hand or kept from before. */
-        repriceRow(index) {
+        /**
+         * A new quantity or unit (and, on a list including VAT, a new VAT rate) re-prices a row the table priced in this session,
+         * never one typed by hand or loaded from a saved document: those change only with "Uppdatera priser".
+         */
+        repriceRow(index, trigger = 'quantity') {
             const row = this.rows[index];
 
-            if (!this.pricingEnabled || !row || !row.article || row.price_source === 'MANUAL' || row.price_source === '' || !this.hasTableEntry(row)) {
+            if (!this.pricingEnabled || !row || !this.hasTableEntry(row) || !shouldReprice(row, sessionPriced.has(rowKey(row)), trigger, this.tier(row))) {
                 return;
             }
 

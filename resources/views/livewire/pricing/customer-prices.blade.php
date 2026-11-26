@@ -88,7 +88,7 @@
                                         {{-- The price an invoice row gets (DocumentPricing), so this screen and the editors always agree to the öre. --}}
                                         {{ App\Support\Money\Money::ofOre((int) ($netPrices[$article->id] ?? $price->unitPriceMinor), $price->currency)->format() }}
                                         @if($price->discountBp > 0)
-                                            <span class="block text-xs font-normal text-gray-500">{{ __('efter −:percent % avtalsrabatt', ['percent' => App\Domain\Pricing\PriceInput::basisPointsToPercent($price->discountBp)]) }}</span>
+                                            <span class="block text-xs font-normal text-gray-500">{{ $price->source === App\Domain\Pricing\PriceSource::Agreement ? __('efter −:percent % avtalsrabatt', ['percent' => App\Domain\Pricing\PriceInput::basisPointsToPercent($price->discountBp)]) : __('efter −:percent % rabatt', ['percent' => App\Domain\Pricing\PriceInput::basisPointsToPercent($price->discountBp)]) }}</span>
                                         @endif
                                     @else
                                         –
