@@ -25,7 +25,9 @@ use Brick\Math\RoundingMode;
  *     made from (same article, unit, quantity, price, discount and currency):
  *     it keeps that row's source and explanation. So a saved draft is not
  *     re-priced by saving it again, and quote → order → invoice keeps the
- *     quoted price; re-pricing is only "Uppdatera priser".
+ *     quoted price; re-pricing is only "Uppdatera priser". A row from a list
+ *     including VAT whose VAT rate changed keeps its source but gets its net
+ *     price worked out again from the gross price stored with it.
  *  5. Filled by the editor's price table (any hint other than MANUAL): the
  *     resolved price, since the server is authoritative over the browser.
  *  6. Otherwise (a price typed in the API, a row whose customer, date or
@@ -180,6 +182,34 @@ final class DocumentPricing
     }
 
     /**
+     * A row kept as stored. A row priced from a list including VAT (its explanation carries gross_minor) whose VAT
+     * rate has changed gets the net unit price worked out again from the gross price stored with it, with the new
+     * rate and rounded down (P-L1), and the price source kept. It is worked out from the stored gross price and
+     * not fetched again: the gross price is what the customer was shown, so a correction of the VAT rate never
+     * brings in a list price that changed since. Only "Uppdatera priser" does that.
+     *
+     * @param  ?int  $vatBp  the row's VAT rate now
+     * @return array{unit_price_minor: int, discount_bp: int, source: PriceSource, explanation: array<string, mixed>}
+     */
+    private static function keptRow(RowPriceSnapshot $snapshot, int $typed, int $discount, ?int $vatBp): array
+    {
+        $kept = ['unit_price_minor' => $typed, 'discount_bp' => $discount, 'source' => $snapshot->source, 'explanation' => $snapshot->explanation];
+        $gross = $snapshot->explanation['gross_minor'] ?? null;
+
+        if (! is_numeric($gross) || $vatBp === null || $snapshot->vatBp === null || $vatBp === $snapshot->vatBp || $snapshot->source === PriceSource::Manual) {
+            return $kept;
+        }
+
+        $folded = is_numeric($snapshot->explanation['folded_discount_bp'] ?? null) ? (int) $snapshot->explanation['folded_discount_bp'] : 0;
+        $discounted = BigRational::of((int) $gross)->multipliedBy(10000 - $folded)->dividedBy(10000)->toScale(0, RoundingMode::Floor)->toInt();
+
+        $kept['unit_price_minor'] = self::consumerNet($discounted, $vatBp);
+        $kept['explanation']['net_rounded_down'] = true;
+
+        return $kept;
+    }
+
+    /**
      * @param  array{article_id: int, unit_id: ?int, quantity: string, price_minor: ?int, discount_bp: ?int, hint: ?string, vat_rate?: int}  $row
      * @param  array<string, RowPriceSnapshot>  $kept
      * @return array{unit_price_minor: int, discount_bp: int, source: PriceSource, explanation: array<string, mixed>}|null
@@ -209,7 +239,7 @@ final class DocumentPricing
         $snapshot = $kept[RowPriceSnapshot::keyOf($context->currency, $row['article_id'], $row['unit_id'], self::milli($row['quantity']), $typed, $discount ?? 0)] ?? null;
 
         if ($snapshot !== null) {
-            return ['unit_price_minor' => $typed, 'discount_bp' => $discount ?? 0, 'source' => $snapshot->source, 'explanation' => $snapshot->explanation];
+            return self::keptRow($snapshot, $typed, $discount ?? 0, $row['vat_rate'] ?? null);
         }
 
         $fromTable = $row['hint'] !== null && $row['hint'] !== PriceSource::Manual->value;

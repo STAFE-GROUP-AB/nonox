@@ -3,7 +3,7 @@
 // Run with: npm test (node --test, no packages needed).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { afterContextChange, consumerNet, discountInput, fromTier, quantityMilli, shouldFillPrice, tierFor } from '../../resources/js/price-table.js';
+import { afterContextChange, consumerNet, grossVatChanged, discountInput, fromTier, quantityMilli, shouldFillPrice, tierFor } from '../../resources/js/price-table.js';
 import { rowNet } from '../../resources/js/sales-math.js';
 
 const table = {
@@ -66,7 +66,7 @@ test('the agreed discount is in the price, so a typed discount gives the server\
 
 test('a step without a source (no prices:view) still marks the row as priced by the table', () => {
     assert.equal(fromTier({ min: 1000, price: 100, source: '', warnings: [] }).price_source, 'AUTO');
-    assert.deepEqual(fromTier(null), { price: '', price_source: '', price_warnings: '', price_explanation: '' });
+    assert.deepEqual(fromTier(null), { price: '', price_source: '', price_warnings: '', price_explanation: '', price_gross_vat: '' });
 });
 
 test('leaving the article field fills the price only when it is empty or the article changed', () => {
@@ -105,4 +105,15 @@ test('a tier without a gross price, or a row without a VAT rate, keeps the tier\
     assert.equal(fromTier({ min: 1000, price: 9000, gross: null, source: 'AGREEMENT', warnings: [] }, '1200').price, '90,00');
     assert.equal(fromTier({ min: 1000, price: 800, gross: 1001, source: 'LIST', warnings: [] }, '').price, '8,00');
     assert.equal(fromTier({ min: 1000, price: 800, gross: 1001, source: 'LIST', warnings: [] }).price, '8,00');
+});
+
+test('a saved row priced from a list including VAT shows the hint when its VAT rate changes', () => {
+    assert.equal(grossVatChanged({ price_gross_vat: '600', vat_rate: '2500', price_source: 'BASE' }), true);
+    // Unchanged rate, a typed price, a list excluding VAT (no flag): no hint.
+    assert.equal(grossVatChanged({ price_gross_vat: '600', vat_rate: '600', price_source: 'BASE' }), false);
+    assert.equal(grossVatChanged({ price_gross_vat: '600', vat_rate: '2500', price_source: 'MANUAL' }), false);
+    assert.equal(grossVatChanged({ price_gross_vat: '', vat_rate: '2500', price_source: 'BASE' }), false);
+    assert.equal(grossVatChanged({ vat_rate: '2500', price_source: 'BASE' }), false);
+    // Priced again in this session: the flag is cleared, so no hint.
+    assert.equal(fromTier({ price: 800, gross: 1001, source: 'BASE', warnings: [] }, '2500').price_gross_vat, '');
 });

@@ -202,7 +202,7 @@ it('combines a discount and a price including VAT on the customer\'s price scree
         ->and($cells['note'])->toContain('−10 %');
 });
 
-it('keeps a saved row\'s price and source when its VAT rate is corrected and saved again', function () {
+it('works out a saved gross-priced row again from the stored gross price when its VAT rate is corrected, keeping the source', function () {
     $draft = app(SaveDraftInvoice::class)($this->owner, $this->company, ['customer_id' => $this->customer->id, 'invoice_date' => '2026-03-15', 'rows' => [followupRow()]]);
     $source = $draft->rows->first()->price_source;
 
@@ -210,7 +210,9 @@ it('keeps a saved row\'s price and source when its VAT rate is corrected and sav
         followupRow(['vat_rate' => 1200, 'price' => '8,00', 'price_source' => $source->value]),
     ]], $draft);
 
-    expect($again->rows->first()->unit_price_ore->ore)->toBe(800)
+    // 10,01 kr including 12 % VAT: 8,93 kr net (it was 8,00 kr at 25 %), so the customer never pays more than the list price.
+    expect($again->rows->first()->unit_price_ore->ore)->toBe(DocumentPricing::consumerNet(1001, 1200))
+        ->and($again->rows->first()->unit_price_ore->ore)->toBe(893)
         ->and($again->rows->first()->price_source)->toBe($source);
 });
 

@@ -14,6 +14,8 @@ use App\Models\SalesDocumentRow;
  * Prices are in the document's currency (an invoice in another currency:
  * the foreign price as written), and the currency is part of what must be
  * unchanged: a row of a document whose currency changed is not kept.
+ * The row's VAT rate is kept too: a price from a list including VAT is
+ * worked out again when the rate changes (DocumentPricing).
  */
 final readonly class RowPriceSnapshot
 {
@@ -27,6 +29,7 @@ final readonly class RowPriceSnapshot
         public int $discountBp,
         public PriceSource $source,
         public array $explanation,
+        public ?int $vatBp = null,
     ) {}
 
     /**
@@ -57,6 +60,7 @@ final readonly class RowPriceSnapshot
                 discountBp: $row->discount_bp,
                 source: $row->price_source,
                 explanation: $row->price_explanation ?? ['source' => $row->price_source->value],
+                vatBp: $row->vat_rate,
             );
         }
 

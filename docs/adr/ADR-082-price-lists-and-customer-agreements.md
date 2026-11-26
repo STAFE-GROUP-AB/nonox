@@ -964,15 +964,25 @@ Known and accepted at launch; none blocks the feature.
   5. The customer's price screen showed the resolver's net price (rounded half
      up) while the editors round down. It now shows `DocumentPricing`'s price,
      so both agree to the öre (10,01 kr including 25 % VAT: 8,00 kr).
-- **VAT rate changed on a saved gross-priced row (open, found 2026-11-26):**
-  the snapshot match (rule 4) compares article, unit, quantity, price,
-  discount and currency but not the VAT rate. A saved row from a list
-  including VAT (10,01 kr, 9,44 kr net at 6 %) that is changed to 25 % keeps
-  9,44 kr net, so the customer pays 11,80 kr including VAT, and the kept
-  explanation still says the customer never pays more than the list price.
-  This predates the P3 follow-ups. Proposed fix: include `vat_rate` in the
-  snapshot match for rows whose explanation carries `gross_minor`, so such a
-  row is priced again at the new rate on save.
+- **VAT rate changed on a saved gross-priced row (*Fixed 2026-11-26.*):**
+  the snapshot match (rule 4) compared article, unit, quantity, price,
+  discount and currency but not the VAT rate, so a saved row from a list
+  including VAT (10,01 kr, 9,44 kr net at 6 %) changed to 25 % kept 9,44 kr
+  net: the customer paid 11,80 kr including VAT, and the kept explanation
+  still said the customer never pays more than the list price. Now
+  `RowPriceSnapshot` carries the stored row's VAT rate, and for a kept row
+  whose explanation has `gross_minor` and whose VAT rate differs,
+  `DocumentPricing::keptRow()` works the net price out again with
+  `consumerNet()` (floor, after the folded discount), keeps the source and
+  explanation and sets `net_rounded_down` (10,01 → 8,00 at 25 %). It derives
+  from the **stored gross price**, not from today's list: the gross price is
+  what the customer was shown, so correcting a VAT rate never silently brings
+  in a list price changed since; only "Uppdatera priser" does that. A MANUAL
+  price and a row from a list excluding VAT are never touched. The browser
+  still does not re-price a loaded row (§6): the row carries
+  `price_gross_vat` (its VAT rate as loaded, empty for other rows, no amount),
+  and when the VAT select differs from it the row shows "Priset hämtas när du
+  sparar.".
   `TODO(legal-verify)`: part of P-L1 — when a correction of the VAT rate
   should change the price a consumer was shown.
 - **Campaigns have no channel field:** a campaign cannot be aimed at one sales

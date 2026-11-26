@@ -113,14 +113,14 @@
                                 <input type="text" inputmode="decimal" class="{{ $cell }} text-right tabular-nums" x-model="row.price" x-on:input="markManual(index)" :aria-label="'{{ __('Pris, rad') }} ' + (index + 1)">
                                 @if($pricing['enabled'])
                                     {{-- Where the price came from (ADR-082 P3): a marker that opens "Varför detta pris?". --}}
-                                    <div class="mt-1 flex flex-wrap justify-end gap-1" x-show="row.article && ((markers && sourceLabel(row.price_source) !== '') || row.price === '' || priceWarnings(row).length > 0)" x-cloak>
+                                    <div class="mt-1 flex flex-wrap justify-end gap-1" x-show="row.article && ((markers && sourceLabel(row.price_source) !== '') || row.price === '' || priceFollowsVat(row) || priceWarnings(row).length > 0)" x-cloak>
                                         <template x-if="markers && sourceLabel(row.price_source) !== '' && canExplain">
                                             <button type="button" data-price-marker :data-price-source="row.price_source" class="rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset" :class="row.price_source === 'MANUAL' ? 'bg-gray-50 text-gray-700 ring-gray-300' : 'bg-accent-50 text-accent-800 ring-accent-200'" x-text="sourceLabel(row.price_source)" x-on:click="explain(index, $el)" title="{{ __('Varför detta pris?') }}" :aria-label="sourceLabel(row.price_source) + '. ' + @js(__('Varför detta pris? Rad')) + ' ' + (index + 1)"></button>
                                         </template>
                                         <template x-if="markers && sourceLabel(row.price_source) !== '' && ! canExplain">
                                             <span data-price-marker :data-price-source="row.price_source" class="rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset bg-gray-50 text-gray-700 ring-gray-300" x-text="sourceLabel(row.price_source)"></span>
                                         </template>
-                                        <p class="w-full text-right text-xs text-gray-500" x-show="row.price === ''">{{ __('Priset hämtas när du sparar.') }}</p>
+                                        <p class="w-full text-right text-xs text-gray-500" x-show="row.price === '' || priceFollowsVat(row)">{{ __('Priset hämtas när du sparar.') }}</p>
                                         <template x-for="warning in priceWarnings(row)" :key="warning">
                                             <p class="w-full text-right text-xs text-amber-800" data-price-warning x-text="warningText(warning)"></p>
                                         </template>
