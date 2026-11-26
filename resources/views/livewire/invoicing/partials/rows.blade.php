@@ -137,7 +137,7 @@
                             </td>
                             <td class="{{ $field }} col-span-3 sm:col-span-2">
                                 <span class="{{ $label }}" aria-hidden="true">{{ __('Moms') }}</span>
-                                <select class="{{ $cell }}" x-model="row.vat_rate" :aria-label="'{{ __('Moms, rad') }} ' + (index + 1)">
+                                <select class="{{ $cell }}" x-model="row.vat_rate" x-on:change="repriceRow(index)" :aria-label="'{{ __('Moms, rad') }} ' + (index + 1)">
                                     @foreach($rates as $rate => $rateLabel)
                                         <option value="{{ $rate }}">{{ $rateLabel }}</option>
                                     @endforeach

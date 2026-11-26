@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Livewire\Pricing;
 
 use App\Actions\Pricing\AssignCustomerPrices;
+use App\Domain\Pricing\DocumentPricing;
 use App\Domain\Pricing\PriceAgreementStatus;
 use App\Domain\Pricing\PriceContext;
 use App\Domain\Pricing\PriceListKind;
 use App\Domain\Pricing\PriceRequest;
 use App\Domain\Pricing\PriceResolver;
+use App\Domain\Pricing\ResolvedPrice;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Article;
 use App\Models\Company;
@@ -105,6 +107,7 @@ class CustomerPrices extends Component
             'customer' => $customer,
             'articles' => $articles,
             'resolved' => $resolved,
+            'netPrices' => $this->netPrices($articles->items(), $resolved),
             'listCodes' => $listIds === [] ? collect() : PriceList::query()->whereIn('id', $listIds)->pluck('code', 'id'),
             'groups' => CustomerPriceGroup::query()->where(fn ($query) => $query->whereNull('archived_at')->orWhere('id', $customer->price_group_id))->orderBy('name')->get(['id', 'name']),
             'lists' => PriceList::query()->where('kind', PriceListKind::Standard->value)->where(fn ($query) => $query->where('currency', $customer->currency)->orWhere('id', $customer->price_list_id))->where(fn ($query) => $query->whereNull('archived_at')->orWhere('id', $customer->price_list_id))->orderBy('code')->get(['id', 'code', 'name', 'currency']),
@@ -121,6 +124,30 @@ class CustomerPrices extends Component
                 ->get(),
             'canManageAgreements' => $this->user()->can('create', [PriceAgreement::class, $this->company()]),
         ]);
+    }
+
+    /**
+     * The unit price an invoice row gets for each article (DocumentPricing: an agreed discount
+     * folded in, a price including VAT worked out and rounded down), so this screen and the editors agree to the öre.
+     *
+     * @param  array<int, Article>  $articles
+     * @param  array<int|string, ResolvedPrice>  $resolved
+     * @return array<int, int>
+     */
+    private function netPrices(array $articles, array $resolved): array
+    {
+        $prices = [];
+
+        foreach ($articles as $article) {
+            $price = $resolved[(string) $article->id] ?? null;
+            $row = $price === null ? null : DocumentPricing::withDiscount($price, null, $article->vat_rate);
+
+            if ($row !== null) {
+                $prices[$article->id] = $row['unit_price_minor'];
+            }
+        }
+
+        return $prices;
     }
 
     private function customer(): Customer

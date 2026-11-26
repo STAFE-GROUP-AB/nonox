@@ -194,7 +194,7 @@ class SalesDocumentEditor extends Component
         $document = $this->document();
         $context = $this->makePricingContext((string) $document->customer_id, now()->toDateString(), $document->currency);
 
-        $this->todaysDiff = $context === null ? [] : $this->priceChanges($context, $this->rowsFrom($document->load(['rows.account', 'rows.costCenter', 'rows.project', 'rows.article:id,number'])->rows));
+        $this->todaysDiff = $context === null ? [] : $this->priceChanges($context, $this->rowsFrom($document->load(['rows.account', 'rows.costCenter', 'rows.project', 'rows.article:id,number'])->rows, keepUnits: false));
     }
 
     public function closeExpiredChoice(): void

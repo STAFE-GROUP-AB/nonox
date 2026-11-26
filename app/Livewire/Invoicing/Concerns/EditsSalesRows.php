@@ -519,9 +519,10 @@ trait EditsSalesRows
      * credited) gets the unit its text names.
      *
      * @param  iterable<object>  $rows  invoice or quote/order rows with their account
+     * @param  bool  $keepUnits  false for a preview: the rows' units are not added to the editor's kept units
      * @return array<int, array<string, string>>
      */
-    protected function rowsFrom(iterable $rows): array
+    protected function rowsFrom(iterable $rows, bool $keepUnits = true): array
     {
         $result = [];
         $register = UnitRegister::load();
@@ -546,12 +547,14 @@ trait EditsSalesRows
 
             $result[] = array_map(fn (mixed $value): string => is_bool($value) ? ($value ? '1' : '') : (string) $value, ['article' => '', 'price_source' => '', ...$input]);
 
-            if (($input['unit_id'] ?? '') !== '') {
+            if ($keepUnits && ($input['unit_id'] ?? '') !== '') {
                 $this->keptUnitIds[] = (int) $input['unit_id'];
             }
         }
 
-        $this->keptUnitIds = array_values(array_unique($this->keptUnitIds));
+        if ($keepUnits) {
+            $this->keptUnitIds = array_values(array_unique($this->keptUnitIds));
+        }
 
         return $result;
     }

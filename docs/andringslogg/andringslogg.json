@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-26-prisrader-moms-kundflik",
+      "datum": "2026-11-26T11:30:00+01:00",
+      "rubrik": "Priser med moms räknas likadant i fakturan och på kundens flik",
+      "beskrivning": "Ett pris från en prislista med moms räknas nu om till à-pris utan moms med radens egen momssats, även om du ändrar momssatsen efter att priset fyllts i. Kundens flik Priser visar samma à-pris som fakturan, till öret, och förklaringen \"Varför detta pris?\" beskriver hur priset räknades fram.",
+      "typ": "Rättat",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-26-avtal-radkalla-kundportal-offerter",
       "datum": "2026-11-26T09:00:00+01:00",
       "rubrik": "Avtalsrader behåller sitt pris och kundportalen läser bara det som visas",

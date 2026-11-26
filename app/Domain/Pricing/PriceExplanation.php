@@ -110,7 +110,10 @@ final class PriceExplanation
         }
 
         if (is_numeric($explanation['gross_minor'] ?? null)) {
-            $details[] = __('Listan har priser med moms: :gross med moms. Raden visar priset utan moms.', ['gross' => $money((int) $explanation['gross_minor'])]);
+            $gross = $money((int) $explanation['gross_minor']);
+            $details[] = ($explanation['net_rounded_down'] ?? false) === true
+                ? __('Listans pris är :gross inklusive moms. À-priset utan moms är uträknat från det med radens momssats och avrundat nedåt till hela öre, så att kunden aldrig betalar mer än listans pris.', ['gross' => $gross])
+                : __('Listans pris är :gross inklusive moms. Raden visar à-priset utan moms.', ['gross' => $gross]);
         }
 
         if (($explanation['derived'] ?? false) === true) {

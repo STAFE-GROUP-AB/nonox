@@ -160,7 +160,7 @@ document.addEventListener('alpine:init', () => {
 
         /** Takes the row's price from the table; a discount typed on the row stays. A row the table cannot price gets its price when saved. */
         priceFromTable(row) {
-            Object.assign(row, fromTier(this.tier(row)));
+            Object.assign(row, fromTier(this.tier(row), row.vat_rate));
         },
 
         /** A new quantity or unit re-prices a row whose price came from the table, never one typed by hand or kept from before. */
@@ -316,6 +316,8 @@ document.addEventListener('alpine:init', () => {
 
             row.description = article.name;
             row.unit_id = article.unit_id ? String(article.unit_id) : row.unit_id;
+            // Before the price: a price from a list including VAT is worked out with the row's VAT rate.
+            row.vat_rate = String(article.vat_rate);
 
             if (fillPrice && this.pricingEnabled) {
                 // The customer's price for the date and currency (ADR-082 P3); an article not in the table yet is fetched first.
@@ -338,7 +340,6 @@ document.addEventListener('alpine:init', () => {
                 row.price = this.currencyCode === 'SEK' ? formatOre(article.price) : row.price;
             }
 
-            row.vat_rate = String(article.vat_rate);
             row.account = '';
 
             // The article's cost centre and project come before the customer's (ADR-081 gap 6).

@@ -3,7 +3,7 @@
 // Run with: npm test (node --test, no packages needed).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { afterContextChange, discountInput, fromTier, quantityMilli, shouldFillPrice, tierFor } from '../../resources/js/price-table.js';
+import { afterContextChange, consumerNet, discountInput, fromTier, quantityMilli, shouldFillPrice, tierFor } from '../../resources/js/price-table.js';
 import { rowNet } from '../../resources/js/sales-math.js';
 
 const table = {
@@ -87,4 +87,22 @@ test('a new customer, date or currency keeps the shown price but clears the tabl
     assert.equal(afterContextChange(freeRow), false);
     assert.deepEqual(tableRow, { article: 'A1', price: '90,00', price_source: '', price_explanation: '' });
     assert.equal(manualRow.price_source, 'MANUAL');
+});
+
+test('a price from a list including VAT is worked out with the row\'s own VAT rate, rounded down like the server', () => {
+    const tier = { min: 1000, price: 800, gross: 1001, source: 'LIST', warnings: [] };
+
+    // 10,01 kr including VAT: 25 % gives 8,00 kr (the article's rate), 12 % gives 8,93 kr, 0 % the gross price itself.
+    assert.equal(fromTier(tier, '2500').price, '8,00');
+    assert.equal(fromTier(tier, '1200').price, '8,93');
+    assert.equal(fromTier(tier, 600).price, '9,44');
+    assert.equal(fromTier(tier, '0').price, '10,01');
+    assert.equal(consumerNet(1001, 1200), 893);
+    assert.equal(consumerNet(-1001, 2500), -801);
+});
+
+test('a tier without a gross price, or a row without a VAT rate, keeps the tier\'s own price', () => {
+    assert.equal(fromTier({ min: 1000, price: 9000, gross: null, source: 'AGREEMENT', warnings: [] }, '1200').price, '90,00');
+    assert.equal(fromTier({ min: 1000, price: 800, gross: 1001, source: 'LIST', warnings: [] }, '').price, '8,00');
+    assert.equal(fromTier({ min: 1000, price: 800, gross: 1001, source: 'LIST', warnings: [] }).price, '8,00');
 });

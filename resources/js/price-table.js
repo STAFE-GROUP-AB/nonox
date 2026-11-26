@@ -57,18 +57,34 @@ export function discountInput(basisPoints) {
 }
 
 /**
+ * The net unit price from a gross one, rounded down, with the row's own VAT
+ * rate in basis points (the same as DocumentPricing::consumerNet on the server).
+ */
+export function consumerNet(grossMinor, vatBp) {
+    const numerator = BigInt(grossMinor) * 10000n;
+    const denominator = BigInt(10000 + vatBp);
+    const quotient = numerator / denominator;
+
+    return Number(numerator < 0n && quotient * denominator !== numerator ? quotient - 1n : quotient);
+}
+
+/**
  * What a row takes from a step of the table: the price and a mark that it
  * came from the table (its source, or AUTO when the person may not see
  * sources). A discount typed on the row is not touched. No step: the price
  * is left empty and found when the document is saved.
  */
-export function fromTier(tier) {
+export function fromTier(tier, vatRate = null) {
     if (!tier) {
         return { price: '', price_source: '', price_warnings: '', price_explanation: '' };
     }
 
+    // A price from a list including VAT is worked out from its gross price with the row's own VAT rate, as the server does.
+    const vatBp = vatRate === null || vatRate === '' ? Number.NaN : Number(vatRate);
+    const net = tier.gross !== null && tier.gross !== undefined && Number.isInteger(vatBp) && vatBp >= 0 ? consumerNet(tier.gross, vatBp) : tier.price;
+
     return {
-        price: tier.price === null ? '' : formatOre(tier.price),
+        price: net === null ? '' : formatOre(net),
         price_source: tier.source || 'AUTO',
         price_warnings: (tier.warnings ?? []).join(','),
         price_explanation: '',
