@@ -23,6 +23,7 @@ use App\Models\Customer;
 use App\Models\PriceAgreement;
 use App\Models\PriceList;
 use App\Models\Project;
+use App\Models\RecurringInvoiceRow;
 use App\Models\Unit;
 use App\Models\User;
 use App\Support\Money\Money;
@@ -532,6 +533,11 @@ trait EditsSalesRows
             // Where the price came from, for the row's marker and "Varför detta pris?" (ADR-082 P3).
             $explanation = $row instanceof Model ? $row->getAttribute('price_explanation') : null;
             $input['price_explanation'] = $explains && is_array($explanation) ? (string) json_encode($explanation) : '';
+            if ($row instanceof RecurringInvoiceRow) {
+                // The stored row's id, so a re-save keeps each row's own price source (ADR-082 follow-up).
+                $input['row_id'] = (string) $row->getKey();
+            }
+
             $input['price_warnings'] = is_array($explanation) ? implode(',', array_filter((array) ($explanation['warnings'] ?? []), is_string(...))) : '';
 
             if (($input['unit_id'] ?? '') === '' && is_string($input['unit'] ?? null)) {

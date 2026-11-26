@@ -121,26 +121,56 @@ it('finds the held documents in the same number of queries for 1 and for 30 quot
 it('checks only the quotes on the page: the portal list costs the same queries for a short and a long history', function () {
     Portal::signIn($this, $this->contact);
 
+    // Odd quotes are priced at 100 kr (clear of the floor), even ones at 90 kr (held back).
     $measure = function (int $quotes): array {
         foreach (range(1, $quotes) as $i) {
-            pf7Quote('90,00')->forceFill(['sent_at' => now()])->save();
+            pf7Quote($i % 2 === 1 ? '100,00' : '90,00')->forceFill(['sent_at' => now()])->save();
         }
 
         $this->get(route('portal.quotes', ['portalKey' => $this->key]))->assertOk();
         DB::flushQueryLog();
         DB::enableQueryLog();
-        $this->get(route('portal.quotes', ['portalKey' => $this->key]))->assertOk();
+        $response = $this->get(route('portal.quotes', ['portalKey' => $this->key]))->assertOk();
         $log = DB::getQueryLog();
         DB::disableQueryLog();
 
         $rowQueries = array_values(array_filter($log, fn (array $query): bool => str_contains($query['query'], 'sales_document_rows')));
 
-        return [count($log), count($rowQueries[0]['bindings'] ?? [])];
+        expect($rowQueries)->not->toBeEmpty();
+
+        return [count($log), count($rowQueries[0]['bindings']), $response->viewData('documents')->count()];
     };
 
-    [$shortQueries] = $measure(3);
-    [$longQueries, $rowIds] = $measure(40);
+    [$shortQueries, , $shortShown] = $measure(3);
+    [$longQueries, $rowIds, $longShown] = $measure(40);
 
+    // The newest 25 of the 40 are quotes 16 to 40; the odd ones among them are shown.
     expect($longQueries)->toBe($shortQueries)
-        ->and($rowIds)->toBeLessThanOrEqual(26);
+        ->and($rowIds)->toBeLessThanOrEqual(26)
+        ->and($shortShown)->toBe(2)
+        ->and($longShown)->toBe(12);
+});
+
+it('keeps the later pages reachable when every quote on a page is held', function () {
+    Portal::signIn($this, $this->contact);
+
+    foreach (range(1, 26) as $i) {
+        pf7Quote('90,00')->forceFill(['sent_at' => now()])->save();
+    }
+
+    $this->get(route('portal.quotes', ['portalKey' => $this->key]))
+        ->assertOk()
+        ->assertSee('Inga offerter eller ordrar att visa på den här sidan')
+        ->assertDontSee('Inga offerter eller ordrar ännu')
+        ->assertSee('page=2', false);
+
+    $this->get(route('portal.quotes', ['portalKey' => $this->key]).'?page=2')->assertOk()->assertSee('Inga offerter eller ordrar att visa på den här sidan');
+});
+
+it('leaves a held quote out of the open quotes on the overview', function () {
+    Portal::signIn($this, $this->contact);
+    pf7Quote('90,00')->forceFill(['sent_at' => now()])->save();
+    pf7Quote('100,00')->forceFill(['sent_at' => now()])->save();
+
+    $this->get(route('portal.home', ['portalKey' => $this->key]))->assertOk()->assertViewHas('openQuotes', 1);
 });

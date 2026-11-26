@@ -15166,5 +15166,7 @@
     "À-pris, kronor": "Unit price, kronor",
     "Prisets ursprung": "Price source",
     "Förklaring av priset (JSON)": "Price explanation (JSON)",
-    "À-pris i fakturans valuta": "Unit price in the invoice currency"
+    "À-pris i fakturans valuta": "Unit price in the invoice currency",
+    "Inga offerter eller ordrar att visa på den här sidan": "No quotes or orders to show on this page",
+    "Fler offerter och ordrar finns på andra sidor.": "More quotes and orders are on other pages."
 }

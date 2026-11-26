@@ -934,13 +934,18 @@ Known and accepted at launch; none blocks the feature.
 
 - **Recurring agreements:** a re-save of a recurring agreement can swap the
   price source between two rows that have the same article and price.
-  *Fixed 2026-11-26.* Stored rows are matched by position (then by an
-  agreeing source), and each stored row is claimed once.
+  *Fixed 2026-11-26.* The agreement editor carries each stored row's id
+  (`row_id`), and a re-save matches on it. A caller that sends no id is
+  matched on article and price, preferring the identical source, then the
+  same position, and each stored row is claimed once.
 - **Customer portal:** the portal's `held()` loads every sent document instead
   of only those the page shows.
   *Fixed 2026-11-26.* The list is a simple paginator whose page alone is
   checked against the floor; a document, and the open-quote count, are
-  checked on their own. A page whose documents are all held shows empty.
+  checked on their own. A page whose documents are all held shows a neutral
+  line and keeps its page links. With the floor on, `openQuoteCount()` loads
+  the open quotes with their rows (bounded by the open quotes, not by the
+  history); without it the count is one SQL query.
 - **Campaigns have no channel field:** a campaign cannot be aimed at one sales
   channel; only channel lists can. *Owner decision 2026-11-22: build it (P11
   below). P11 is built.*

@@ -604,3 +604,38 @@ it('keeps each row\'s own price source when a re-save has two rows with the same
 
     expect($sources())->toBe([null, 'MANUAL']);
 });
+
+it('does not hand a deleted row\'s price source to the row that is left (ADR-082 follow-up)', function () {
+    $world = vipWorld($this);
+    $agreement = agreementFor($this, $world->customer, [articleRow('A1', '1', '100,00'), articleRow('A1', '1', '100,00')], 'FOLLOW_PRICES');
+    $first = $agreement->rows()->orderBy('position')->first();
+    $first->forceFill(['price_source' => PriceSource::CustomerList->value, 'price_explanation' => ['source' => 'CUSTOMER_LIST', 'list_id' => 1]])->save();
+    $second = $agreement->rows()->orderBy('position')->skip(1)->first();
+
+    $save = fn (array $row) => app(SaveRecurringInvoice::class)($this->owner, $this->company, [
+        'customer_id' => $world->customer->id, 'name' => 'Abonnemang', 'interval_months' => 1, 'next_invoice_date' => '2026-06-15',
+        'rows' => [$row],
+    ], $agreement->fresh());
+
+    // Through the editor: the rows carry their stored ids.
+    $editor = Livewire::test(AgreementEditor::class, ['agreement' => $agreement->fresh()]);
+    $rows = $editor->get('rows');
+
+    expect($rows[1]['row_id'])->toBe((string) $second->id);
+
+    $editor->set('rows', [$rows[1]])->call('save')->assertHasNoErrors();
+
+    $left = $agreement->fresh()->rows()->sole();
+
+    expect($left->price_source)->toBeNull()
+        ->and($left->price_explanation)->toBeNull();
+
+    // A caller that sends no row id: the exact source decides.
+    $agreement->rows()->delete();
+    $agreement->rows()->create(['position' => 0, 'description' => 'A1', 'quantity' => '1', 'unit_id' => $second->unit_id, 'unit' => $second->unit, 'article_id' => $second->article_id, 'unit_price_ore' => 10000, 'vat_rate' => 2500, 'account_id' => $second->account_id, 'net_ore' => 10000, 'price_source' => PriceSource::CustomerList->value, 'price_explanation' => ['source' => 'CUSTOMER_LIST']]);
+    $agreement->rows()->create(['position' => 1, 'description' => 'A1', 'quantity' => '1', 'unit_id' => $second->unit_id, 'unit' => $second->unit, 'article_id' => $second->article_id, 'unit_price_ore' => 10000, 'vat_rate' => 2500, 'account_id' => $second->account_id, 'net_ore' => 10000]);
+
+    $save(articleRow('A1', '1', '100,00'));
+
+    expect($agreement->fresh()->rows()->sole()->price_source)->toBeNull();
+});

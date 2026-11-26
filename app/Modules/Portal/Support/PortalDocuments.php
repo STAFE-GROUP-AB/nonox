@@ -8,10 +8,8 @@ use App\Domain\Invoicing\InvoiceStatus;
 use App\Domain\Invoicing\SalesDocumentStatus;
 use App\Domain\Pricing\PriceFloor;
 use App\Domain\Pricing\PriceFloorGuard;
-use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\SalesDocument;
-use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -71,7 +69,7 @@ final class PortalDocuments
      */
     public function salesDocumentsPage(int $perPage): Paginator
     {
-        $page = $this->sentDocuments()->orderByDesc('document_date')->orderByDesc('number')->simplePaginate($perPage);
+        $page = $this->sentDocuments()->orderByDesc('document_date')->orderByDesc('number')->orderBy('kind')->orderByDesc('id')->simplePaginate($perPage);
         $held = $this->heldAmong($page->getCollection());
 
         return $page->setCollection($page->getCollection()->reject(fn (SalesDocument $document): bool => in_array($document->id, $held, true))->values());
@@ -108,16 +106,12 @@ final class PortalDocuments
             return [];
         }
 
-        $company = Company::query()->find(CurrentCompany::id());
-
-        return $company instanceof Company ? PriceFloorGuard::heldIds($company, new EloquentCollection($documents->all())) : [];
+        return PriceFloorGuard::heldIds($this->context->company(), new EloquentCollection($documents->all()));
     }
 
     private function floorRequiresApproval(): bool
     {
-        $company = Company::query()->find(CurrentCompany::id());
-
-        return $company instanceof Company && PriceFloor::of($company)->requiresApproval();
+        return PriceFloor::of($this->context->company())->requiresApproval();
     }
 
     public function salesDocument(string $id): SalesDocument

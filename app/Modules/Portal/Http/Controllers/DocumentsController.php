@@ -143,7 +143,7 @@ final class DocumentsController
 
     public function quote(string $document): View
     {
-        $quote = $this->documents->salesDocument($document)->load('rows');
+        $quote = $this->documents->salesDocument($document)->loadMissing('rows');
 
         return $this->view('quote', [
             'document' => $quote,

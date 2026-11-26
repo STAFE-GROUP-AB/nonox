@@ -7,8 +7,13 @@
 
     @if($documents->isEmpty())
         <div class="mt-6 rounded-2xl bg-white p-6 ring-1 ring-stone-200">
-            <p class="font-semibold">{{ __('Inga offerter eller ordrar ännu') }}</p>
-            <p class="mt-1 text-gray-700">{{ __('Här visas offerter och ordrar som företaget har skickat till er.') }}</p>
+            @if($documents->onFirstPage() && ! $documents->hasMorePages())
+                <p class="font-semibold">{{ __('Inga offerter eller ordrar ännu') }}</p>
+                <p class="mt-1 text-gray-700">{{ __('Här visas offerter och ordrar som företaget har skickat till er.') }}</p>
+            @else
+                <p class="font-semibold">{{ __('Inga offerter eller ordrar att visa på den här sidan') }}</p>
+                <p class="mt-1 text-gray-700">{{ __('Fler offerter och ordrar finns på andra sidor.') }}</p>
+            @endif
         </div>
     @else
         <ul class="mt-6 divide-y divide-stone-100 rounded-2xl bg-white ring-1 ring-stone-200">
@@ -19,6 +24,9 @@
                 </li>
             @endforeach
         </ul>
-        <div class="mt-4">{{ $documents->links() }}</div>
+    @endif
+
+    @if($documents->hasPages())
+        <div class="mt-4">{{ $documents->links('pagination::simple-tailwind') }}</div>
     @endif
 @endsection
