@@ -60,7 +60,7 @@ final class DocumentsController
             'openAmount' => (int) $open->sum(fn (Invoice $invoice): int => $invoice->remaining()->ore),
             'overdueAmount' => (int) $open->filter(fn (Invoice $invoice): bool => $invoice->due_date->lessThan($today))->sum(fn (Invoice $invoice): int => $invoice->remaining()->ore),
             'nextDue' => $open->filter(fn (Invoice $invoice): bool => ! $invoice->due_date->lessThan($today))->min('due_date'),
-            'openQuotes' => $this->documents->openQuotes()->count(),
+            'openQuotes' => $this->documents->openQuoteCount(),
             'unread' => PortalThread::query()->where('customer_id', $this->context->customer()->id)->where('status', PortalThread::OPEN)->where('answered', true)->count(),
         ]);
     }
@@ -136,14 +136,14 @@ final class DocumentsController
 
     public function quotes(): View
     {
-        $documents = $this->documents->salesDocuments()->orderByDesc('document_date')->orderByDesc('number')->paginate(self::PER_PAGE);
+        $documents = $this->documents->salesDocumentsPage(self::PER_PAGE);
 
         return $this->view('quotes', ['documents' => $documents]);
     }
 
     public function quote(string $document): View
     {
-        $quote = $this->documents->salesDocument($document)->load('rows');
+        $quote = $this->documents->salesDocument($document)->loadMissing('rows');
 
         return $this->view('quote', [
             'document' => $quote,

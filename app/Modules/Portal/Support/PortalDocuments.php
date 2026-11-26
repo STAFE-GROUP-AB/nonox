@@ -8,12 +8,13 @@ use App\Domain\Invoicing\InvoiceStatus;
 use App\Domain\Invoicing\SalesDocumentStatus;
 use App\Domain\Pricing\PriceFloor;
 use App\Domain\Pricing\PriceFloorGuard;
-use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\SalesDocument;
-use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 /**
@@ -50,50 +51,78 @@ final class PortalDocuments
     }
 
     /** @return Builder<SalesDocument> */
-    public function salesDocuments(): Builder
+    private function sentDocuments(): Builder
     {
-        $held = $this->held();
-
         return SalesDocument::query()
             ->where('customer_id', $this->context->customer()->id)
-            ->whereNotNull('sent_at')
-            ->when($held !== [], fn (Builder $query) => $query->whereNotIn('id', $held));
+            ->whereNotNull('sent_at');
+    }
+
+    /**
+     * One page of the sent quotes and orders the customer may see, newest
+     * first. Only the documents on the page are checked against the price
+     * floor (ADR-082 §9), so the work does not grow with the history. A
+     * simple paginator is used on purpose: a total would count the documents
+     * that are held back. A page whose documents are all held is empty.
+     *
+     * @return Paginator<int, SalesDocument>
+     */
+    public function salesDocumentsPage(int $perPage): Paginator
+    {
+        $page = $this->sentDocuments()->orderByDesc('document_date')->orderByDesc('number')->orderBy('kind')->orderByDesc('id')->simplePaginate($perPage);
+        $held = $this->heldAmong($page->getCollection());
+
+        return $page->setCollection($page->getCollection()->reject(fn (SalesDocument $document): bool => in_array($document->id, $held, true))->values());
+    }
+
+    /** The number of open quotes the customer may see. */
+    public function openQuoteCount(): int
+    {
+        $open = $this->sentDocuments()->where('kind', SalesDocument::QUOTE)->where('status', SalesDocumentStatus::Open->value);
+
+        if (! $this->floorRequiresApproval()) {
+            return $open->count();
+        }
+
+        $documents = $open->get();
+
+        return $documents->count() - count($this->heldAmong($documents));
     }
 
     /**
      * Sent quotes and orders changed after they were sent, whose manual prices
      * under the company's floor are not approved in the rows they have now
      * (ADR-082 §9): they stay sent, but the customer sees neither the document
-     * nor its PDF until they are approved again. Nothing is read for a company
-     * without a floor that requires approval; otherwise the rows, costs and
-     * approvals are loaded once, whatever the number of documents.
+     * nor its PDF until they are approved again. Only the given documents are
+     * checked, and nothing is read for a company without a floor that requires
+     * approval; otherwise their rows, costs and approvals are loaded once.
      *
+     * @param  Collection<int, SalesDocument>  $documents
      * @return list<string>
      */
-    private function held(): array
+    private function heldAmong(Collection $documents): array
     {
-        $company = Company::query()->find(CurrentCompany::id());
-
-        if (! $company instanceof Company || ! PriceFloor::of($company)->requiresApproval()) {
+        if ($documents->isEmpty() || ! $this->floorRequiresApproval()) {
             return [];
         }
 
-        $documents = SalesDocument::query()->where('customer_id', $this->context->customer()->id)->whereNotNull('sent_at')->get();
+        return PriceFloorGuard::heldIds($this->context->company(), new EloquentCollection($documents->all()));
+    }
 
-        return PriceFloorGuard::heldIds($company, $documents);
+    private function floorRequiresApproval(): bool
+    {
+        return PriceFloor::of($this->context->company())->requiresApproval();
     }
 
     public function salesDocument(string $id): SalesDocument
     {
         abort_unless(Str::isUuid($id), 404);
 
-        return $this->salesDocuments()->whereKey($id)->firstOrFail();
-    }
+        $document = $this->sentDocuments()->whereKey($id)->firstOrFail();
 
-    /** @return Builder<SalesDocument> */
-    public function openQuotes(): Builder
-    {
-        return $this->salesDocuments()->where('kind', SalesDocument::QUOTE)->where('status', SalesDocumentStatus::Open->value);
+        abort_if($this->heldAmong(new Collection([$document])) !== [], 404);
+
+        return $document;
     }
 
     /**

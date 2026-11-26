@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-26-avtal-radkalla-kundportal-offerter",
+      "datum": "2026-11-26T09:00:00+01:00",
+      "rubrik": "Avtalsrader behåller sitt pris och kundportalen läser bara det som visas",
+      "beskrivning": "När du sparar ett avtal om fakturering på nytt behåller varje rad sitt eget prisursprung, även när två rader har samma artikel och samma pris. Kundportalens offertlista kontrollerar bara de offerter och ordrar som visas på sidan, så sidan går lika snabbt för kunder med lång historik.",
+      "typ": "Rättat",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-23-arkivpaket-prisuppgifter",
       "datum": "2026-11-23T02:45:00+01:00",
       "rubrik": "Arkivpaketet visar hur varje fakturarads pris valdes",
