@@ -946,6 +946,24 @@ Known and accepted at launch; none blocks the feature.
   line and keeps its page links. With the floor on, `openQuoteCount()` loads
   the open quotes with their rows (bounded by the open quotes, not by the
   history); without it the count is one SQL query.
+- **P3 editor follow-ups.** *Fixed 2026-11-26.*
+  1. The browser worked out the net price of a price including VAT with the
+     article's VAT rate, while the server uses the row's own. A price-table
+     tier now carries the discounted gross price (`gross`), and the editor
+     works out the net price from it with the row's VAT rate (the same
+     rounding down as `DocumentPricing::consumerNet`), also when the VAT rate
+     of the row is changed afterwards.
+  2. `previewTodaysPrices()` added the stored rows' units to `keptUnitIds`;
+     a preview now leaves the editor's state alone (`rowsFrom(keepUnits: false)`).
+  3. A query-count test (`PricingP3FollowupsTest`) covers the invoice and quote
+     editors' price table, "Uppdatera priser" and "Hämta dagens priser" for 1 and 120
+     rows. No N+1 was found; the test is a guard.
+  4. The explanation of a gross price now says that the list price includes
+     VAT and that the net unit price is worked out with the row's VAT rate and
+     rounded down.
+  5. The customer's price screen showed the resolver's net price (rounded half
+     up) while the editors round down. It now shows `DocumentPricing`'s price,
+     so both agree to the öre (10,01 kr including 25 % VAT: 8,00 kr).
 - **Campaigns have no channel field:** a campaign cannot be aimed at one sales
   channel; only channel lists can. *Owner decision 2026-11-22: build it (P11
   below). P11 is built.*

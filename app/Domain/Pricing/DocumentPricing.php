@@ -115,8 +115,7 @@ final class DocumentPricing
 
         if ($consumer) {
             // From a gross price both steps round down: the discounted gross price, then the net price (P-L1).
-            $gross = BigRational::of((int) $price->grossUnitPriceMinor)->multipliedBy(10000 - $price->discountBp)->dividedBy(10000)->toScale(0, RoundingMode::Floor)->toInt();
-            $unit = self::consumerNet($gross, (int) $vatBp);
+            $unit = self::consumerNet((int) self::discountedGross($price), (int) $vatBp);
             $explanation['net_rounded_down'] = true;
         }
 
@@ -132,6 +131,20 @@ final class DocumentPricing
         }
 
         return ['unit_price_minor' => $unit, 'discount_bp' => $discount, 'source' => $price->source, 'explanation' => $explanation];
+    }
+
+    /**
+     * The gross unit price of a price from a list including VAT, with the agreed discount taken off and
+     * rounded down: what the browser needs to work out the net price with the row's own VAT rate.
+     * Null for a price that is not from such a list.
+     */
+    public static function discountedGross(ResolvedPrice $price): ?int
+    {
+        if (! $price->includesVat || $price->grossUnitPriceMinor === null || $price->source === null || $price->source === PriceSource::Manual) {
+            return null;
+        }
+
+        return BigRational::of($price->grossUnitPriceMinor)->multipliedBy(10000 - $price->discountBp)->dividedBy(10000)->toScale(0, RoundingMode::Floor)->toInt();
     }
 
     /** The net unit price from a gross one, rounded down so the price including VAT is never more than the gross. */

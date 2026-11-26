@@ -34,7 +34,7 @@ final class PriceTable
      * come from (prices:view).
      *
      * @param  Collection<int, Article>  $articles  with id, number, vat_rate, sales_unit_id and stock_unit_id
-     * @return array<string, array{unit_id: ?int, tiers: list<array{min: int, price: ?int, source: string, warnings: list<string>}>}> by article number, steps from the lowest
+     * @return array<string, array{unit_id: ?int, tiers: list<array{min: int, price: ?int, gross?: int, source: string, warnings: list<string>}>}> by article number, steps from the lowest
      */
     public function for(PriceContext $context, Collection $articles, bool $withSources = true): array
     {
@@ -67,9 +67,12 @@ final class PriceTable
             foreach ($byArticle[$article->id] ?? [] as $milli => $price) {
                 $row = DocumentPricing::withDiscount($price, null, $article->vat_rate);
 
+                $gross = DocumentPricing::discountedGross($price);
+
                 $tiers[$milli] = [
                     'min' => $milli,
                     'price' => $row['unit_price_minor'] ?? null,
+                    ...($gross === null ? [] : ['gross' => $gross]),
                     'source' => $withSources ? ($price->source->value ?? '') : '',
                     'warnings' => $price->warnings,
                 ];

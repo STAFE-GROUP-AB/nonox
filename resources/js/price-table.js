@@ -57,22 +57,54 @@ export function discountInput(basisPoints) {
 }
 
 /**
+ * The net unit price from a gross one, rounded down, with the row's own VAT
+ * rate in basis points (the same as DocumentPricing::consumerNet on the server).
+ */
+export function consumerNet(grossMinor, vatBp) {
+    const numerator = BigInt(grossMinor) * 10000n;
+    const denominator = BigInt(10000 + vatBp);
+    const quotient = numerator / denominator;
+
+    return Number(numerator < 0n && quotient * denominator !== numerator ? quotient - 1n : quotient);
+}
+
+/**
  * What a row takes from a step of the table: the price and a mark that it
  * came from the table (its source, or AUTO when the person may not see
  * sources). A discount typed on the row is not touched. No step: the price
  * is left empty and found when the document is saved.
  */
-export function fromTier(tier) {
+export function fromTier(tier, vatRate = null) {
     if (!tier) {
         return { price: '', price_source: '', price_warnings: '', price_explanation: '' };
     }
 
+    // A price from a list including VAT is worked out from its gross price with the row's own VAT rate, as the server does.
+    const vatBp = vatRate === null || vatRate === '' ? Number.NaN : Number(vatRate);
+    const net = tier.gross !== null && tier.gross !== undefined && Number.isInteger(vatBp) && vatBp >= 0 ? consumerNet(tier.gross, vatBp) : tier.price;
+
     return {
-        price: tier.price === null ? '' : formatOre(tier.price),
+        price: net === null ? '' : formatOre(net),
         price_source: tier.source || 'AUTO',
         price_warnings: (tier.warnings ?? []).join(','),
         price_explanation: '',
     };
+}
+
+/**
+ * Whether a field change on a row re-prices it by itself (ADR-082 §6). Only a
+ * row whose price the table gave in this editing session is ever re-priced: a
+ * row loaded from a saved document keeps its price until "Uppdatera priser".
+ * A new quantity or unit re-prices such a row; a new VAT rate does only when
+ * the step carries a gross price (a list including VAT), as the VAT rate
+ * then changes the net price.
+ */
+export function shouldReprice(row, pricedThisSession, trigger, tier) {
+    if (!pricedThisSession || !String(row?.article ?? '').trim() || !row.price_source || row.price_source === 'MANUAL' || !tier) {
+        return false;
+    }
+
+    return trigger !== 'vat' || (tier.gross !== null && tier.gross !== undefined);
 }
 
 /** Whether leaving the article field fills the price: only for an empty price or a new article, never over a typed or kept price. */
