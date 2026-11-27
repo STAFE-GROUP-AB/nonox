@@ -1021,6 +1021,13 @@ Known and accepted at launch; none blocks the feature.
   against the current company, apply to the rule kinds and not to files, and are
   stored in the run's scope. The mass update has no API or file-import
   surface (P9 exposes lists and agreements, not runs), so the API is unchanged.
+  Known edge case (accepted 2026-11-27): when the price is in a converted unit
+  and the exact cost per unit is a fraction of an öre, a document row costs
+  `HalfUp(quantity x exact)`, which can be up to half an öre above the exact
+  cost the price was derived from. Such a row can then show a margin under the
+  floor by less than 0,01 percentage point, which the preview does not flag.
+  Deriving the price from the cost rounded up to whole öre would remove it at
+  the cost of a slightly higher price; left as is.
 - **Archive package:** the price source and explanation of issued invoice
   rows are in the archive package as `kundfakturor/Prisuppgifter.csv`
   (version 0.161). *Done 2026-11-23 (queue item 28 follow-up).* SIE stays
