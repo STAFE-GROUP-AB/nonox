@@ -6,6 +6,7 @@ namespace App\Domain\Pricing;
 
 use Brick\Math\BigDecimal;
 use Brick\Math\BigInteger;
+use Brick\Math\BigRational;
 use Brick\Math\Exception\MathException;
 use Brick\Math\RoundingMode;
 use InvalidArgumentException;
@@ -15,7 +16,7 @@ use InvalidArgumentException;
  * minor units: a percentage, a fixed amount, or the ratio of two index
  * figures the user types (decision 11; NONOX fetches no index), or a target
  * contribution margin over cost (priceFromCost; the cost is per line). The result
- * is rounded HalfUp to the minor unit once, then by the run's rounding rule
+ * is rounded HalfUp to the minor unit once (a margin price: Ceiling), then by the run's rounding rule
  * (§7), where a price above zero never rounds to zero.
  *
  * Stored on the run as ids and numbers only: {percent_bp}, {amount_minor} or
@@ -67,20 +68,24 @@ final readonly class PriceUpdateRule
     }
 
     /**
-     * The net price, rounded HalfUp to the minor unit, at which $costMinor
-     * leaves the target margin: cost / (1 - margin). With a VAT rate in basis
-     * points the gross price of that net price follows (a list including
-     * VAT): the margin is worked out on the net price, never on the gross.
+     * The net price, rounded up (Ceiling) to the minor unit, at which $cost
+     * leaves at least the target margin: cost / (1 - margin). Rounding up
+     * keeps a price set to margin m from falling below a floor of the same
+     * m. With a VAT rate in basis points the gross price follows (a list
+     * including VAT), also rounded up, so that its net (DocumentPricing::
+     * consumerNet rounds down) is never below the net price: the margin is
+     * worked out on the net price, never on the gross. $cost may be an exact
+     * fraction of an öre.
      */
-    public function priceFromCost(int $costMinor, ?int $vatBp = null): int
+    public function priceFromCost(int|BigRational $cost, ?int $vatBp = null): int
     {
-        $net = BigInteger::of($costMinor)->multipliedBy(10000)->dividedBy(10000 - (int) $this->marginBp, RoundingMode::HalfUp);
+        $net = BigRational::of($cost)->multipliedBy(10000)->dividedBy(10000 - (int) $this->marginBp)->toScale(0, RoundingMode::Ceiling);
 
         if ($vatBp === null) {
             return $net->toInt();
         }
 
-        return $net->multipliedBy(10000 + $vatBp)->dividedBy(10000, RoundingMode::HalfUp)->toInt();
+        return BigRational::of($net)->multipliedBy(10000 + $vatBp)->dividedBy(10000)->toScale(0, RoundingMode::Ceiling)->toInt();
     }
 
     /** Prices typed in a file: no rule, the file says the price. */

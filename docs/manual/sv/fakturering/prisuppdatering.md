@@ -36,11 +36,12 @@ Ett nummerintervall med bara siffror jämförs som tal, så 20 kommer före 100.
 
 ## Sätt priset från en täckningsgrad
 
-Med **Mål för täckningsgrad** skriver du vilken täckningsgrad priserna ska få, till exempel 30. NONOX räknar då ut priset från artikelns inköpspris så att 30 % av priset exklusive moms blir kvar efter inköpspriset. Det är samma täckningsgrad och samma inköpspris som **Lägsta täckningsgrad** använder, så ett pris du sätter här hamnar aldrig under golvet du valt med samma procent.
+Med **Mål för täckningsgrad** skriver du vilken täckningsgrad priserna ska få, till exempel 30. NONOX räknar då ut priset från artikelns inköpspris så att 30 % av priset exklusive moms blir kvar efter inköpspriset. Det är samma täckningsgrad och samma inköpspris som **Lägsta täckningsgrad** använder, så ett pris du sätter här hamnar inte under golvet du valt med samma procent, om du inte väljer en avrundning nedåt.
 
-- Priset blir inköpspriset delat med (1 minus täckningsgraden). Inköpspris 70 kr och 30 % ger 100 kr exklusive moms.
+- Priset blir inköpspriset per enhet delat med (1 minus täckningsgraden). Inköpspris 70 kr och 30 % ger 100 kr exklusive moms. Priset räknas från inköpspriset per just den enhet priset gäller, utan att inköpspriset först rundas.
 - I en prislista med priser inklusive moms räknas täckningsgraden på priset utan moms, och sedan läggs momsen på: 100 kr blir 125 kr med 25 % moms.
-- **Avrundning** gäller sist, så en avrundning uppåt kan ge en något högre täckningsgrad och en avrundning nedåt en något lägre.
+- Priset rundas alltid uppåt till hela ören, så täckningsgraden aldrig blir lägre än den du skrev: inköpspris 70,01 kr och 30 % ger 100,02 kr. I en prislista med priser inklusive moms rundas också priset med moms uppåt.
+- **Avrundning** gäller sist. Rundar den uppåt blir täckningsgraden något högre; rundar den nedåt kan den hamna under det du skrev. Sådana rader får märket **Under målet** med den täckningsgrad priset ger i stället, och märket **Under lägsta täckningsgrad** om priset ligger under golvet du satt. Priset ändras inte av märkena: du bestämmer om det ska gälla ändå eller om du väljer en annan avrundning.
 - Täckningsgraden kan vara från 0 upp till men inte med 100 %.
 - Priser i en annan valuta än kronor ändras inte, eftersom inköpspriset är i kronor.
 - Artiklar som saknar inköpspris (eller har 0 kr) hoppas över. De visas i förhandsgranskningen som **Kan inte ändras** med orsaken *Artikeln saknar inköpspris*.

@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Actions\Pricing;
 
 use App\Domain\Pricing\ArticleCostBook;
+use App\Domain\Pricing\DocumentPricing;
 use App\Domain\Pricing\PriceFile;
+use App\Domain\Pricing\PriceFloor;
 use App\Domain\Pricing\PriceInput;
 use App\Domain\Pricing\PriceRounding;
 use App\Domain\Pricing\PriceUpdateKind;
@@ -32,6 +34,8 @@ use App\Support\Audit\Audit;
 use App\Support\Files\StoredFiles;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
+use Brick\Math\BigRational;
+use Brick\Math\RoundingMode;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
@@ -80,7 +84,7 @@ class PlanPriceUpdate
     {
         Gate::forUser($user)->authorize('create', [PriceUpdateRun::class, $company]);
 
-        $validated = $this->validate($input, $file);
+        $validated = $this->validate($company, $input, $file);
         $kind = PriceUpdateKind::from($validated['kind']);
         $rounding = $kind === PriceUpdateKind::File ? PriceRounding::None : PriceRounding::from($validated['rounding'] ?? 'NONE');
         $effective = CarbonImmutable::parse($validated['effective_date']);
@@ -174,7 +178,7 @@ class PlanPriceUpdate
      * @param  array<string, mixed>  $input
      * @return array<string, mixed>
      */
-    private function validate(array $input, ?UploadedFile $file): array
+    private function validate(Company $company, array $input, ?UploadedFile $file): array
     {
         $validated = Validator::make([...$input, 'file' => $file], [
             'kind' => ['required', 'in:PERCENT,AMOUNT,MARGIN,INDEX,FILE'],
@@ -229,7 +233,7 @@ class PlanPriceUpdate
         }
 
         if ($validated['kind'] !== 'FILE') {
-            $this->checkSuppliers(array_values(array_unique(array_map('intval', $validated['supplier_ids'] ?? []))));
+            CurrentCompany::run($company, fn () => $this->checkSuppliers(array_values(array_unique(array_map('intval', $validated['supplier_ids'] ?? [])))));
         }
 
         return $validated;
@@ -286,6 +290,9 @@ class PlanPriceUpdate
         $allowed = array_values(array_unique([...$own, ...$campaigns]));
 
         if ($listIds === []) {
+            // Without a choice an archived list (or campaign) is left out, not a reason to fail the run.
+            $allowed = $allowed === [] ? [] : array_values(array_map('intval', PriceList::query()->whereKey($allowed)->whereNull('archived_at')->pluck('id')->all()));
+
             if ($allowed === []) {
                 throw ValidationException::withMessages(['price_group_ids' => __('Kundgrupperna har ingen prislista att uppdatera.')]);
             }
@@ -539,26 +546,31 @@ class PlanPriceUpdate
      * codes of the units, loaded once.
      *
      * @param  Collection<int, Article>  $articles
-     * @return array{book: ArticleCostBook, units: Collection<int, string>}
+     * @return array{book: ArticleCostBook, units: Collection<int, string>, floor_bp: ?int}
      */
     private function marginBasis(Company $company, Collection $articles, CarbonImmutable $effective): array
     {
         return [
             'book' => ArticleCostBook::for($company, array_values($articles->keys()->map(fn (mixed $id): int => (int) $id)->all()), $effective),
             'units' => Unit::query()->get(['id', 'code'])->pluck('code', 'id'),
+            'floor_bp' => PriceFloor::of($company)->minimumBp,
         ];
     }
 
     /**
-     * A price from a target margin: the cost of one whole unit of the price
-     * (the list item's unit, or the article's sales unit) from the cost book,
-     * the net price that leaves the margin, then the gross price for a list
-     * including VAT, then the run's rounding. An article without a cost (or
-     * with one of 0 kr, as RowMargin takes it) or a unit that does not
-     * convert to its stock unit is refused with the reason.
+     * A price from a target margin: the exact cost of one whole unit of the
+     * price (the list item's unit, or the article's sales unit) from the cost
+     * book, the net price that leaves at least the margin (rounded up once),
+     * then the gross price for a list including VAT (rounded up), then the
+     * run's rounding. A rounding rule can round down, so a line whose
+     * achieved margin ends below the target is flagged (`below_target:<bp>`),
+     * as is one below the company's lowest margin (`below_floor`); the price
+     * is never changed for it. An article without a cost (or with one of
+     * 0 kr), a unit that does not convert to its stock unit, or a cost too
+     * small to price in öre is refused with the reason.
      *
      * @param  array<string, mixed>  $line
-     * @param  array{book: ArticleCostBook, units: Collection<int, string>}  $margin
+     * @param  array{book: ArticleCostBook, units: Collection<int, string>, floor_bp: ?int}  $margin
      * @return array<string, mixed>
      */
     private function marginLine(PriceUpdateRule $rule, PriceRounding $rounding, array $line, Article $article, ?int $unitId, ?PriceList $list, array $margin): array
@@ -571,21 +583,48 @@ class PlanPriceUpdate
             return $this->refused($line, PriceUpdateRefusal::MissingCost);
         }
 
-        $cost = $margin['book']->unitCostOre($article->id, $unitCode);
+        $cost = $margin['book']->unitCostExact($article->id, $unitCode);
 
         if ($cost === null) {
             return $this->refused($line, PriceUpdateRefusal::UnitNotConvertible);
         }
 
-        if ($cost <= 0) {
+        if ($cost->isNegativeOrZero()) {
             return $this->refused($line, PriceUpdateRefusal::MissingCost);
         }
 
+        $costOre = $cost->toScale(0, RoundingMode::Ceiling)->toInt();
         $includesVat = $list instanceof PriceList && $list->prices_include_vat;
-        $unrounded = $rule->priceFromCost($cost, $includesVat ? $article->vat_rate : null);
+        $vat = $includesVat ? (int) $article->vat_rate : null;
+        $unrounded = $rule->priceFromCost($cost, $vat);
+
+        if ($cost->toScale(0, RoundingMode::HalfUp)->isZero() || $rounding->apply($unrounded) === 0) {
+            return $this->refused([...$line, 'unrounded_minor' => $unrounded], PriceUpdateRefusal::CostTooSmall);
+        }
 
         // Net lists compare with the cost directly; a gross price is not compared with a net cost.
-        return $this->computed($rule, $rounding, [...$line, 'cost_minor' => $includesVat ? null : $cost], $unrounded);
+        $result = $this->computed($rule, $rounding, [...$line, 'cost_minor' => $includesVat ? null : $costOre], $unrounded);
+
+        if (! is_int($result['new_minor'] ?? null) || $result['status'] === PriceUpdateLineStatus::Refused->value) {
+            return $result;
+        }
+
+        $net = $vat === null ? $result['new_minor'] : DocumentPricing::consumerNet($result['new_minor'], $vat);
+        $flags = $result['flags'] ?? [];
+
+        // contribution / net < margin, exactly: net × (10 000 - margin) < cost × 10 000.
+        $below = fn (int $bp): bool => $net === 0 || BigRational::of($net)->multipliedBy(10000 - $bp)->isLessThan($cost->multipliedBy(10000));
+
+        if ($below((int) $rule->marginBp)) {
+            $achieved = $net === 0 ? 0 : BigRational::of($net)->minus($cost)->multipliedBy(10000)->dividedBy($net)->toScale(0, RoundingMode::Floor)->toInt();
+            $flags[] = "below_target:{$achieved}";
+        }
+
+        if ($margin['floor_bp'] !== null && $below($margin['floor_bp'])) {
+            $flags[] = 'below_floor';
+        }
+
+        return [...$result, 'flags' => $flags === [] ? null : $flags];
     }
 
     /**

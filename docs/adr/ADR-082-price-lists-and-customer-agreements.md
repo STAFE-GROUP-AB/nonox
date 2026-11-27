@@ -999,10 +999,18 @@ Known and accepted at launch; none blocks the feature.
   and no supplier or customer-group filters.
   *Built 2026-11-27.* `MARGIN` sets each price so the contribution margin
   (täckningsgrad, `RowMargin`'s definition, §9) equals the target: net price =
-  cost / (1 - margin), the cost per whole price unit from `ArticleCostBook` (the
-  same costing as the floor and the document margin, loaded once), HalfUp to
-  öre. A list including VAT gets the margin on the net price and then the gross
-  (net x (1 + VAT), HalfUp); the run's rounding rule applies last. A target
+  cost / (1 - margin), the exact cost per whole price unit from `ArticleCostBook`
+  (the same costing as the floor and the document margin, loaded once; stock
+  cost / entered-per-stock as a fraction, never rounded per unit first),
+  rounded up (Ceiling) to öre once, so a price set to margin m is never under a
+  floor of the same m. A list including VAT gets the margin on the net price and
+  then the gross (net x (1 + VAT), Ceiling, so `consumerNet(gross)` is at least
+  the net); the run's rounding rule applies last and can round down, so a line
+  whose achieved margin ends below the target is flagged `below_target:<bp>`
+  and one below the company's floor `below_floor` in the preview (the price is
+  not changed). A cost too small to price in öre is refused `COST_TOO_SMALL`.
+  An archived list or campaign of a chosen customer group is left out when no
+  list is picked. A target
   from 0 % up to but not including 100 %. An article without a cost (or 0 kr),
   a unit that does not convert and a list in another currency are refused per
   line (`MISSING_COST`, `UNIT_NOT_CONVERTIBLE`, `MARGIN_OTHER_CURRENCY`). The

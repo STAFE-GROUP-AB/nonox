@@ -12,6 +12,7 @@
         'below_cost' => __('Under inköpspris'),
         'big_change' => __('Ändras mer än 25 %'),
         'rounding_moved' => __('Avrundningen flyttar mer än 2 %'),
+        'below_floor' => __('Under lägsta täckningsgrad'),
     ];
     $price = fn (?int $minor, ?int $discount, string $currency): string => $minor !== null
         ? Money::ofOre($minor, $currency)->format()
@@ -165,7 +166,7 @@
                                         <span class="block text-xs text-red-700">{{ $line->reason->label() }}</span>
                                     @endif
                                     @foreach(in_array($line->status, [PriceUpdateLineStatus::Ready, PriceUpdateLineStatus::Applied], true) ? ($line->flags ?? []) : [] as $flag)
-                                        <span class="block text-xs text-amber-800">{{ $flagLabels[$flag] ?? $flag }}</span>
+                                        <span class="block text-xs text-amber-800">{{ str_starts_with($flag, 'below_target:') ? __('Under målet: :percent % täckningsgrad', ['percent' => PriceInput::basisPointsToPercent((int) substr($flag, 13))]) : ($flagLabels[$flag] ?? $flag) }}</span>
                                     @endforeach
                                 </td>
                             </tr>
