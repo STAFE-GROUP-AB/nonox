@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-27-prisuppdatering-tackningsgrad-filter",
+      "datum": "2026-11-27T18:40:00+01:00",
+      "rubrik": "Prisuppdatering efter täckningsgrad, med filter på leverantör och kundgrupp",
+      "beskrivning": "I en prisuppdatering kan du nu välja *Mål för täckningsgrad* och få varje pris räknat så att täckningsgraden blir den du skrivit, på samma sätt som lägsta täckningsgrad räknar. Artiklar utan inköpspris hoppas över och visas i förhandsgranskningen. Du kan också begränsa uppdateringen till artiklar från en leverantör eller till en kundgrupps prislistor och kampanjer.",
+      "typ": "Förbättrat",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-26-prisrader-moms-sparad-rad",
       "datum": "2026-11-26T19:45:00+01:00",
       "rubrik": "Ändrad moms på en sparad rad med pris inklusive moms",

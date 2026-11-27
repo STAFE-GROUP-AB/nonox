@@ -30,6 +30,8 @@
                             {{ ($rule['percent_bp'] > 0 ? '+' : '').PriceInput::basisPointsToPercent((int) $rule['percent_bp']) }} %
                         @elseif(isset($rule['amount_minor']))
                             {{ ($rule['amount_minor'] > 0 ? '+' : '').Money::ofOre((int) $rule['amount_minor'])->format() }}
+                        @elseif(isset($rule['margin_bp']))
+                            {{ PriceInput::basisPointsToPercent((int) $rule['margin_bp']) }} %
                         @elseif(isset($rule['index_old']))
                             {{ str_replace('.', ',', (string) $rule['index_old']) }} → {{ str_replace('.', ',', (string) $rule['index_new']) }}
                         @endif

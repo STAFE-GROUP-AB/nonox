@@ -101,9 +101,30 @@
                         <div class="sm:col-span-4"></div>
                     @endif
 
+                    <x-ui.field for="update_supplier" :label="__('Leverantör')" error="supplier_ids" class="sm:col-span-3" :hint="__('Bara artiklar vars standardleverantör är den valda.')">
+                        <select id="update_supplier" class="{{ $input }} mt-1" wire:model="form.supplier_id">
+                            <option value="">{{ __('Alla leverantörer') }}</option>
+                            @foreach($suppliers as $supplier)
+                                <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
+                            @endforeach
+                        </select>
+                    </x-ui.field>
+                    <x-ui.field for="update_price_group" :label="__('Kundgrupp')" error="price_group_ids" class="sm:col-span-3" :hint="__('Begränsar uppdateringen till kundgruppens prislista och kampanjer riktade till den. Gäller inte grundpriserna.')">
+                        <select id="update_price_group" class="{{ $input }} mt-1" wire:model="form.price_group_id">
+                            <option value="">{{ __('Alla kundgrupper') }}</option>
+                            @foreach($priceGroups as $group)
+                                <option value="{{ $group->id }}">{{ $group->code }} · {{ $group->name }}</option>
+                            @endforeach
+                        </select>
+                    </x-ui.field>
+
                     @if($kind === 'PERCENT')
                         <x-ui.field for="update_percent" :label="__('Ändring i procent')" error="percent" class="sm:col-span-2" :hint="__('4 höjer med 4 %, -10 sänker med 10 %.')">
                             <input id="update_percent" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="form.percent" autocomplete="off">
+                        </x-ui.field>
+                    @elseif($kind === 'MARGIN')
+                        <x-ui.field for="update_margin" :label="__('Önskad täckningsgrad i procent')" error="margin" class="sm:col-span-2" :hint="__('30 ger ett pris där 30 % av priset exklusive moms blir kvar efter inköpspriset. Samma beräkning som lägsta täckningsgrad. Artiklar utan inköpspris hoppas över och visas i förhandsgranskningen.')">
+                            <input id="update_margin" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="form.margin" autocomplete="off">
                         </x-ui.field>
                     @elseif($kind === 'AMOUNT')
                         <x-ui.field for="update_amount" :label="__('Ändring i kronor')" error="amount" class="sm:col-span-2" :hint="__('10 höjer med 10 kr, -5,50 sänker. Ändrar bara priser i kronor; i en lista med priser inklusive moms läggs beloppet till priset inklusive moms.')">

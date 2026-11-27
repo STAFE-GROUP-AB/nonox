@@ -13,7 +13,8 @@ use InvalidArgumentException;
 /**
  * The change a mass price update makes to one price (ADR-082 §8), in integer
  * minor units: a percentage, a fixed amount, or the ratio of two index
- * figures the user types (decision 11; NONOX fetches no index). The result
+ * figures the user types (decision 11; NONOX fetches no index), or a target
+ * contribution margin over cost (priceFromCost; the cost is per line). The result
  * is rounded HalfUp to the minor unit once, then by the run's rounding rule
  * (§7), where a price above zero never rounds to zero.
  *
@@ -28,6 +29,7 @@ final readonly class PriceUpdateRule
         public ?int $amountMinor,
         public ?BigDecimal $indexOld,
         public ?BigDecimal $indexNew,
+        public ?int $marginBp = null,
     ) {}
 
     public static function percent(int $basisPoints): self
@@ -49,6 +51,38 @@ final readonly class PriceUpdateRule
         return new self(PriceUpdateKind::Index, null, null, $old, $new);
     }
 
+    /**
+     * The price that gives a contribution margin (täckningsgrad, the same
+     * definition as RowMargin and the margin floor, ADR-082 §9): the target
+     * share of the net price that is left after cost. From 0 up to but not
+     * including 100 %; 100 % or more cannot be reached from a cost above zero.
+     */
+    public static function margin(int $basisPoints): self
+    {
+        if ($basisPoints < 0 || $basisPoints >= 10000) {
+            throw new InvalidArgumentException('A target margin must be from 0 % up to but not including 100 %.');
+        }
+
+        return new self(PriceUpdateKind::Margin, null, null, null, null, $basisPoints);
+    }
+
+    /**
+     * The net price, rounded HalfUp to the minor unit, at which $costMinor
+     * leaves the target margin: cost / (1 - margin). With a VAT rate in basis
+     * points the gross price of that net price follows (a list including
+     * VAT): the margin is worked out on the net price, never on the gross.
+     */
+    public function priceFromCost(int $costMinor, ?int $vatBp = null): int
+    {
+        $net = BigInteger::of($costMinor)->multipliedBy(10000)->dividedBy(10000 - (int) $this->marginBp, RoundingMode::HalfUp);
+
+        if ($vatBp === null) {
+            return $net->toInt();
+        }
+
+        return $net->multipliedBy(10000 + $vatBp)->dividedBy(10000, RoundingMode::HalfUp)->toInt();
+    }
+
     /** Prices typed in a file: no rule, the file says the price. */
     public static function file(): self
     {
@@ -62,6 +96,7 @@ final readonly class PriceUpdateRule
             PriceUpdateKind::Percent => self::percent((int) $rule['percent_bp']),
             PriceUpdateKind::Amount => self::amount((int) $rule['amount_minor']),
             PriceUpdateKind::Index => self::index(BigDecimal::of((string) $rule['index_old']), BigDecimal::of((string) $rule['index_new'])),
+            PriceUpdateKind::Margin => self::margin((int) $rule['margin_bp']),
             default => self::file(),
         };
     }
@@ -91,6 +126,7 @@ final readonly class PriceUpdateRule
             PriceUpdateKind::Percent => ['percent_bp' => (int) $this->percentBp],
             PriceUpdateKind::Amount => ['amount_minor' => (int) $this->amountMinor],
             PriceUpdateKind::Index => ['index_old' => (string) $this->indexOld, 'index_new' => (string) $this->indexNew],
+            PriceUpdateKind::Margin => ['margin_bp' => (int) $this->marginBp],
             default => [],
         };
     }

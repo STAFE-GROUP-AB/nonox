@@ -22,7 +22,7 @@ enum PriceUpdateKind: string
         return match ($this) {
             self::Percent => __('Procent'),
             self::Amount => __('Fast belopp'),
-            self::Margin => __('Påslag på kostnad'),
+            self::Margin => __('Mål för täckningsgrad'),
             self::File => __('Från fil'),
             self::Index => __('Indexuppräkning'),
         };

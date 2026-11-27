@@ -997,6 +997,22 @@ Known and accepted at launch; none blocks the feature.
   approval queue (ADR-067), not to the margin floor.*
 - **Mass update (P6):** no `MARGIN` rule (set the price from a target margin)
   and no supplier or customer-group filters.
+  *Built 2026-11-27.* `MARGIN` sets each price so the contribution margin
+  (täckningsgrad, `RowMargin`'s definition, §9) equals the target: net price =
+  cost / (1 - margin), the cost per whole price unit from `ArticleCostBook` (the
+  same costing as the floor and the document margin, loaded once), HalfUp to
+  öre. A list including VAT gets the margin on the net price and then the gross
+  (net x (1 + VAT), HalfUp); the run's rounding rule applies last. A target
+  from 0 % up to but not including 100 %. An article without a cost (or 0 kr),
+  a unit that does not convert and a list in another currency are refused per
+  line (`MISSING_COST`, `UNIT_NOT_CONVERTIBLE`, `MARGIN_OTHER_CURRENCY`). The
+  price tells the cost, so planning a margin needs `prices:view-cost` as well
+  as `price-lists:manage`. Filters: supplier (the article's default supplier,
+  all targets) and customer group (limits the lists to the group's own list and
+  the campaigns aimed at it; base prices belong to no group); both are checked
+  against the current company, apply to the rule kinds and not to files, and are
+  stored in the run's scope. The mass update has no API or file-import
+  surface (P9 exposes lists and agreements, not runs), so the API is unchanged.
 - **Archive package:** the price source and explanation of issued invoice
   rows are in the archive package as `kundfakturor/Prisuppgifter.csv`
   (version 0.161). *Done 2026-11-23 (queue item 28 follow-up).* SIE stays

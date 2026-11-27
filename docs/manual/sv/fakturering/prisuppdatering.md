@@ -1,9 +1,9 @@
 ---
-beskrivning: Ändra många priser på en gång, med en procent, ett belopp, två indextal eller från en fil, och se varje nytt pris innan något sparas.
+beskrivning: Ändra många priser på en gång, med en procent, ett belopp, en önskad täckningsgrad, två indextal eller från en fil, och se varje nytt pris innan något sparas.
 ordning: 26
 roller: [owner, admin, accountant]
 rutter: [pricing.updates, pricing.updates.show]
-sokord: [prisuppdatering, prishöjning, prisändring, höja priser, sänka priser, indexuppräkning, KPI, index, importera priser, exportera prislista, excel, csv]
+sokord: [prisuppdatering, täckningsgrad, marginal, leverantör, kundgrupp, prishöjning, prisändring, höja priser, sänka priser, indexuppräkning, KPI, index, importera priser, exportera prislista, excel, csv]
 ---
 
 # Prisuppdatering
@@ -17,15 +17,33 @@ Prisuppdateringen finns under **Register → Prislistor → Prisuppdatering**. A
 ## Så här gör du en prisuppdatering
 
 1. Gå till **Register → Prislistor** och tryck på **Prisuppdatering**.
-2. Välj under **Hur priserna ändras**: **Procent**, **Fast belopp**, **Indexuppräkning** eller **Från fil**.
+2. Välj under **Hur priserna ändras**: **Procent**, **Fast belopp**, **Mål för täckningsgrad**, **Indexuppräkning** eller **Från fil**. **Mål för täckningsgrad** syns bara för den som får se inköpspriser.
 3. Fyll i **Gäller från**. Det kan vara i dag eller ett datum längre fram.
 4. Kryssa i under **Vilka priser**: **Grundpriserna i artikelregistret**, en eller flera prislistor, eller båda.
 5. Välj under **Vilka artiklar**: **Alla aktiva artiklar**, **Ett nummerintervall**, **Nummer eller benämning innehåller** eller **Valda artiklar**.
-6. Skriv ändringen: **Ändring i procent** (4 höjer med 4 %, -10 sänker med 10 %), **Ändring i kronor**, eller **Gammalt indextal** och **Nytt indextal**.
-7. Välj **Avrundning**, till exempel hela kronor eller så att priset slutar på 9.
-8. Tryck på **Förhandsgranska**. Ingenting är ändrat ännu.
+6. Vill du begränsa urvalet väljer du en **Leverantör** eller en **Kundgrupp** (se nedan).
+7. Skriv ändringen: **Ändring i procent** (4 höjer med 4 %, -10 sänker med 10 %), **Ändring i kronor**, **Önskad täckningsgrad i procent**, eller **Gammalt indextal** och **Nytt indextal**.
+8. Välj **Avrundning**, till exempel hela kronor eller så att priset slutar på 9.
+9. Tryck på **Förhandsgranska**. Ingenting är ändrat ännu.
 
 Ett nummerintervall med bara siffror jämförs som tal, så 20 kommer före 100.
+
+## Filtrera på leverantör och kundgrupp
+
+- **Leverantör** begränsar uppdateringen till artiklar vars standardleverantör är den du väljer. Det gäller både grundpriser och prislistor, och går att kombinera med **Vilka artiklar**.
+- **Kundgrupp** begränsar uppdateringen till kundgruppens prislista och de kampanjer som riktar sig till gruppen. Kryssar du inte i någon lista tas alla de listorna med; kryssar du i listor måste de höra till gruppen. Grundpriserna tillhör ingen kundgrupp, så kryssa ur **Grundpriserna i artikelregistret** när du väljer en kundgrupp.
+- Filtren gäller inte uppdateringar **Från fil**, där filen själv säger vilka priser som ändras.
+
+## Sätt priset från en täckningsgrad
+
+Med **Mål för täckningsgrad** skriver du vilken täckningsgrad priserna ska få, till exempel 30. NONOX räknar då ut priset från artikelns inköpspris så att 30 % av priset exklusive moms blir kvar efter inköpspriset. Det är samma täckningsgrad och samma inköpspris som **Lägsta täckningsgrad** använder, så ett pris du sätter här hamnar aldrig under golvet du valt med samma procent.
+
+- Priset blir inköpspriset delat med (1 minus täckningsgraden). Inköpspris 70 kr och 30 % ger 100 kr exklusive moms.
+- I en prislista med priser inklusive moms räknas täckningsgraden på priset utan moms, och sedan läggs momsen på: 100 kr blir 125 kr med 25 % moms.
+- **Avrundning** gäller sist, så en avrundning uppåt kan ge en något högre täckningsgrad och en avrundning nedåt en något lägre.
+- Täckningsgraden kan vara från 0 upp till men inte med 100 %.
+- Priser i en annan valuta än kronor ändras inte, eftersom inköpspriset är i kronor.
+- Artiklar som saknar inköpspris (eller har 0 kr) hoppas över. De visas i förhandsgranskningen som **Kan inte ändras** med orsaken *Artikeln saknar inköpspris*.
 
 ## Förhandsgranska och genomför
 
@@ -57,6 +75,7 @@ I kolumnen **Status och fel** står orsaken, till exempel:
 - **Priset är en rabatt på ordinarie pris och följer det redan.** En rabatt i procent ändras när det ordinarie priset ändras.
 - **Ett annat pris börjar redan samma dag.** Ändra det i listan, eller återställ den uppdatering som lade in det.
 - **Ett fast belopp i kronor ändrar inte priser i en annan valuta.** Använd en procent för listor i euro.
+- **Artikeln saknar inköpspris, så priset kan inte räknas från en täckningsgrad.** Lägg in inköpspriset i artikelregistret och gör om uppdateringen.
 - **Priset blir lägre än noll.** En sänkning med ett belopp får inte bli större än priset.
 
 ## Indexuppräkning

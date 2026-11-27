@@ -10,8 +10,10 @@ use App\Domain\Pricing\PriceUpdateKind;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Article;
 use App\Models\Company;
+use App\Models\CustomerPriceGroup;
 use App\Models\PriceList;
 use App\Models\PriceUpdateRun;
+use App\Models\Supplier;
 use App\Models\User;
 use App\Support\Toast;
 use Carbon\CarbonImmutable;
@@ -57,6 +59,9 @@ class PriceUpdates extends Component
             'number_to' => '',
             'search' => '',
             'article_ids' => [],
+            'supplier_id' => '',
+            'price_group_id' => '',
+            'margin' => '',
             'percent' => '',
             'amount' => '',
             'index_old' => '',
@@ -95,6 +100,8 @@ class PriceUpdates extends Component
                 ? ($fileTarget === 'base' ? [] : [(int) $fileTarget])
                 : array_map('intval', $this->form['list_ids'] ?? []),
             'article_ids' => array_map('intval', $this->form['article_ids'] ?? []),
+            'supplier_ids' => $this->form['kind'] === 'FILE' || ($this->form['supplier_id'] ?? '') === '' ? [] : [(int) $this->form['supplier_id']],
+            'price_group_ids' => $this->form['kind'] === 'FILE' || ($this->form['price_group_id'] ?? '') === '' ? [] : [(int) $this->form['price_group_id']],
         ];
 
         $run = $plan($this->user(), $this->company(), $input, $file);
@@ -109,13 +116,30 @@ class PriceUpdates extends Component
 
         return view('livewire.pricing.price-updates', [
             'canManage' => $this->user()->can('create', [PriceUpdateRun::class, $this->company()]),
-            'kinds' => [PriceUpdateKind::Percent, PriceUpdateKind::Amount, PriceUpdateKind::Index, PriceUpdateKind::File],
+            'kinds' => $this->kinds(),
+            'suppliers' => Supplier::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'priceGroups' => CustomerPriceGroup::query()->whereNull('archived_at')->orderBy('name')->get(['id', 'code', 'name']),
             'roundings' => PriceRounding::cases(),
             'lists' => PriceList::query()->whereNull('archived_at')->orderBy('code')->get(['id', 'code', 'name', 'currency', 'kind']),
             'chosenArticles' => $chosen === [] ? collect() : Article::query()->whereKey($chosen)->orderBy('number')->get(['id', 'number', 'name']),
             'articleMatches' => $this->articleMatches(),
             'runs' => PriceUpdateRun::query()->with('creator:id,name')->latest('id')->paginate(15),
         ]);
+    }
+
+    /**
+     * A target margin is offered only to people who may see cost (prices:view-cost),
+     * since the price it gives tells the cost.
+     *
+     * @return list<PriceUpdateKind>
+     */
+    private function kinds(): array
+    {
+        $mayViewCost = $this->user()->hasTeamPermission($this->company(), 'prices:view-cost');
+
+        return $mayViewCost
+            ? [PriceUpdateKind::Percent, PriceUpdateKind::Amount, PriceUpdateKind::Margin, PriceUpdateKind::Index, PriceUpdateKind::File]
+            : [PriceUpdateKind::Percent, PriceUpdateKind::Amount, PriceUpdateKind::Index, PriceUpdateKind::File];
     }
 
     /** @return Collection<int, Article> */
