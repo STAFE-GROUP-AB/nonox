@@ -120,6 +120,27 @@ final class ArticleCostBook
             ->toInt();
     }
 
+    /**
+     * The exact cost of one whole $unitCode in öre, unrounded (stock cost
+     * divided by the entered units per stock unit); null when its cost is
+     * unknown or the unit does not convert. For deriving a price, where the
+     * rounding is done once at the end.
+     */
+    public function unitCostExact(int $articleId, string $unitCode): ?BigRational
+    {
+        if (! isset($this->perStockUnit[$articleId])) {
+            return null;
+        }
+
+        $perStock = UnitConverter::enteredPerStock($this->stockCodes[$articleId] ?? '', $unitCode, $this->conversions[$articleId] ?? []);
+
+        if ($perStock === null || $perStock->isZero()) {
+            return null;
+        }
+
+        return BigRational::of($this->perStockUnit[$articleId])->dividedBy($perStock);
+    }
+
     /** The cost of one whole $unitCode in öre, rounded half up; for messages like "412 kr < 430 kr", never for sums. */
     public function unitCostOre(int $articleId, string $unitCode): ?int
     {

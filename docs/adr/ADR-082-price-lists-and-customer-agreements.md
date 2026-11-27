@@ -997,6 +997,30 @@ Known and accepted at launch; none blocks the feature.
   approval queue (ADR-067), not to the margin floor.*
 - **Mass update (P6):** no `MARGIN` rule (set the price from a target margin)
   and no supplier or customer-group filters.
+  *Built 2026-11-27.* `MARGIN` sets each price so the contribution margin
+  (täckningsgrad, `RowMargin`'s definition, §9) equals the target: net price =
+  cost / (1 - margin), the exact cost per whole price unit from `ArticleCostBook`
+  (the same costing as the floor and the document margin, loaded once; stock
+  cost / entered-per-stock as a fraction, never rounded per unit first),
+  rounded up (Ceiling) to öre once, so a price set to margin m is never under a
+  floor of the same m. A list including VAT gets the margin on the net price and
+  then the gross (net x (1 + VAT), Ceiling, so `consumerNet(gross)` is at least
+  the net); the run's rounding rule applies last and can round down, so a line
+  whose achieved margin ends below the target is flagged `below_target:<bp>`
+  and one below the company's floor `below_floor` in the preview (the price is
+  not changed). A cost too small to price in öre is refused `COST_TOO_SMALL`.
+  An archived list or campaign of a chosen customer group is left out when no
+  list is picked. A target
+  from 0 % up to but not including 100 %. An article without a cost (or 0 kr),
+  a unit that does not convert and a list in another currency are refused per
+  line (`MISSING_COST`, `UNIT_NOT_CONVERTIBLE`, `MARGIN_OTHER_CURRENCY`). The
+  price tells the cost, so planning a margin needs `prices:view-cost` as well
+  as `price-lists:manage`. Filters: supplier (the article's default supplier,
+  all targets) and customer group (limits the lists to the group's own list and
+  the campaigns aimed at it; base prices belong to no group); both are checked
+  against the current company, apply to the rule kinds and not to files, and are
+  stored in the run's scope. The mass update has no API or file-import
+  surface (P9 exposes lists and agreements, not runs), so the API is unchanged.
 - **Archive package:** the price source and explanation of issued invoice
   rows are in the archive package as `kundfakturor/Prisuppgifter.csv`
   (version 0.161). *Done 2026-11-23 (queue item 28 follow-up).* SIE stays

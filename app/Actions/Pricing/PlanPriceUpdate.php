@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Actions\Pricing;
 
+use App\Domain\Pricing\ArticleCostBook;
+use App\Domain\Pricing\DocumentPricing;
 use App\Domain\Pricing\PriceFile;
+use App\Domain\Pricing\PriceFloor;
 use App\Domain\Pricing\PriceInput;
 use App\Domain\Pricing\PriceRounding;
 use App\Domain\Pricing\PriceUpdateKind;
@@ -17,10 +20,13 @@ use App\Domain\Units\UnitConverter;
 use App\Domain\Units\UnitDefaults;
 use App\Models\Article;
 use App\Models\Company;
+use App\Models\CustomerPriceGroup;
 use App\Models\PriceList;
 use App\Models\PriceListItem;
+use App\Models\PriceListPriceGroup;
 use App\Models\PriceUpdateRun;
 use App\Models\PriceUpdateRunLine;
+use App\Models\Supplier;
 use App\Models\Unit;
 use App\Models\User;
 use App\Modules\Inventory\Models\ArticleUnitConversion;
@@ -28,7 +34,10 @@ use App\Support\Audit\Audit;
 use App\Support\Files\StoredFiles;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
+use Brick\Math\BigRational;
+use Brick\Math\RoundingMode;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
@@ -69,13 +78,13 @@ class PlanPriceUpdate
     private const int CHUNK = 1000;
 
     /**
-     * @param  array<string, mixed>  $input  kind (PERCENT, AMOUNT, INDEX, FILE), base (bool), list_ids (ids), articles (all, range, search, selected), number_from, number_to, search, article_ids, percent, amount, index_old, index_new (text), rounding, effective_date (Y-m-d)
+     * @param  array<string, mixed>  $input  kind (PERCENT, AMOUNT, MARGIN, INDEX, FILE), base (bool), list_ids (ids), articles (all, range, search, selected), number_from, number_to, search, article_ids, supplier_ids, price_group_ids (customer groups: limits the lists to theirs), percent, amount, margin (target contribution margin in percent), index_old, index_new (text), rounding, effective_date (Y-m-d)
      */
     public function __invoke(User $user, Company $company, array $input, ?UploadedFile $file = null): PriceUpdateRun
     {
         Gate::forUser($user)->authorize('create', [PriceUpdateRun::class, $company]);
 
-        $validated = $this->validate($input, $file);
+        $validated = $this->validate($company, $input, $file);
         $kind = PriceUpdateKind::from($validated['kind']);
         $rounding = $kind === PriceUpdateKind::File ? PriceRounding::None : PriceRounding::from($validated['rounding'] ?? 'NONE');
         $effective = CarbonImmutable::parse($validated['effective_date']);
@@ -87,6 +96,15 @@ class PlanPriceUpdate
         $rule = $this->rule($kind, $validated);
         $base = (bool) ($validated['base'] ?? false);
         $listIds = array_values(array_unique(array_map('intval', $validated['list_ids'] ?? [])));
+        $groupIds = $kind === PriceUpdateKind::File ? [] : array_values(array_unique(array_map('intval', $validated['price_group_ids'] ?? [])));
+
+        if ($kind === PriceUpdateKind::Margin && ! $user->hasTeamPermission($company, 'prices:view-cost')) {
+            throw new AuthorizationException(__('Du får inte se inköpspriser, och en täckningsgrad räknas på dem.'));
+        }
+
+        if ($groupIds !== []) {
+            $listIds = CurrentCompany::run($company, fn (): array => $this->groupLists($groupIds, $listIds, $base));
+        }
 
         if (! $base && $listIds === []) {
             throw ValidationException::withMessages(['targets' => __('Välj vilka priser som ska ändras: grundpriserna, en eller flera prislistor, eller båda.')]);
@@ -96,15 +114,15 @@ class PlanPriceUpdate
             throw ValidationException::withMessages(['targets' => __('En fil ändrar en sak åt gången: grundpriserna eller en prislista.')]);
         }
 
-        return CurrentCompany::run($company, function () use ($user, $company, $validated, $kind, $rule, $rounding, $effective, $base, $listIds, $file): PriceUpdateRun {
+        return CurrentCompany::run($company, function () use ($user, $company, $validated, $kind, $rule, $rounding, $effective, $base, $listIds, $groupIds, $file): PriceUpdateRun {
             $lists = $this->lists($listIds);
             [$path, $sha256, $format] = $file === null ? [null, null, null] : $this->store($company, $file);
 
             try {
-                return DB::transaction(function () use ($user, $company, $validated, $kind, $rule, $rounding, $effective, $base, $lists, $path, $sha256, $format): PriceUpdateRun {
+                return DB::transaction(function () use ($user, $company, $validated, $kind, $rule, $rounding, $effective, $base, $lists, $groupIds, $path, $sha256, $format): PriceUpdateRun {
                     $lines = $kind === PriceUpdateKind::File
                         ? $this->fileLines((string) $path, $base, $lists->first(), $effective)
-                        : $this->ruleLines($validated, $rule, $rounding, $effective, $base, $lists);
+                        : $this->ruleLines($company, $validated, $rule, $rounding, $effective, $base, $lists);
 
                     if (count($lines) > self::MAX_LINES) {
                         throw ValidationException::withMessages(['targets' => __('Uppdateringen omfattar fler än :max priser. Dela upp den på färre listor eller ett nummerintervall.', ['max' => number_format(self::MAX_LINES, 0, ',', ' ')])]);
@@ -124,6 +142,8 @@ class PlanPriceUpdate
                             'price_list_ids' => $lists->pluck('id')->all(),
                             'articles' => $validated['articles'] ?? 'all',
                             'article_ids' => array_values(array_map('intval', $validated['article_ids'] ?? [])),
+                            'supplier_ids' => $kind === PriceUpdateKind::File ? [] : array_values(array_map('intval', $validated['supplier_ids'] ?? [])),
+                            'price_group_ids' => $groupIds,
                             'number_from' => $validated['number_from'] ?? null,
                             'number_to' => $validated['number_to'] ?? null,
                         ],
@@ -158,10 +178,10 @@ class PlanPriceUpdate
      * @param  array<string, mixed>  $input
      * @return array<string, mixed>
      */
-    private function validate(array $input, ?UploadedFile $file): array
+    private function validate(Company $company, array $input, ?UploadedFile $file): array
     {
         $validated = Validator::make([...$input, 'file' => $file], [
-            'kind' => ['required', 'in:PERCENT,AMOUNT,INDEX,FILE'],
+            'kind' => ['required', 'in:PERCENT,AMOUNT,MARGIN,INDEX,FILE'],
             'base' => ['nullable', 'boolean'],
             'list_ids' => ['nullable', 'array'],
             'list_ids.*' => ['integer'],
@@ -171,6 +191,11 @@ class PlanPriceUpdate
             'search' => ['nullable', 'string', 'max:100'],
             'article_ids' => ['nullable', 'array'],
             'article_ids.*' => ['integer'],
+            'supplier_ids' => ['nullable', 'array'],
+            'supplier_ids.*' => ['integer'],
+            'price_group_ids' => ['nullable', 'array'],
+            'price_group_ids.*' => ['integer'],
+            'margin' => ['nullable', 'string', 'max:20'],
             'percent' => ['nullable', 'string', 'max:20'],
             'amount' => ['nullable', 'string', 'max:30'],
             'index_old' => ['nullable', 'string', 'max:20'],
@@ -207,7 +232,79 @@ class PlanPriceUpdate
             throw ValidationException::withMessages(['article_ids' => __('Välj minst en artikel.')]);
         }
 
+        if ($validated['kind'] !== 'FILE') {
+            CurrentCompany::run($company, fn () => $this->checkSuppliers(array_values(array_unique(array_map('intval', $validated['supplier_ids'] ?? [])))));
+        }
+
         return $validated;
+    }
+
+    /**
+     * The chosen suppliers, of the current company only: another company's id
+     * or an unknown one is a validation error.
+     *
+     * @param  list<int>  $ids
+     */
+    private function checkSuppliers(array $ids): void
+    {
+        if ($ids === []) {
+            return;
+        }
+
+        $known = Supplier::query()->whereKey($ids)->count();
+
+        if ($known !== count($ids)) {
+            throw ValidationException::withMessages(['supplier_ids' => __('Någon av leverantörerna finns inte.')]);
+        }
+    }
+
+    /**
+     * The lists a customer-group filter leaves: the groups' own price lists
+     * and the campaigns aimed at them. Without chosen lists all of those are
+     * taken; chosen lists must be among them. Base prices belong to no group.
+     * Another company's group, an unknown or an archived one is a validation
+     * error.
+     *
+     * @param  list<int>  $groupIds
+     * @param  list<int>  $listIds
+     * @return list<int>
+     */
+    private function groupLists(array $groupIds, array $listIds, bool $base): array
+    {
+        $groups = CustomerPriceGroup::query()->whereKey($groupIds)->get(['id', 'price_list_id', 'archived_at']);
+
+        if ($groups->count() !== count($groupIds)) {
+            throw ValidationException::withMessages(['price_group_ids' => __('Någon av kundgrupperna finns inte.')]);
+        }
+
+        if ($groups->contains(fn (CustomerPriceGroup $group): bool => $group->archived_at !== null)) {
+            throw ValidationException::withMessages(['price_group_ids' => __('En arkiverad kundgrupp kan inte väljas.')]);
+        }
+
+        if ($base) {
+            throw ValidationException::withMessages(['price_group_ids' => __('Grundpriserna tillhör ingen kundgrupp. Ta bort kundgruppen, eller välj bara prislistor.')]);
+        }
+
+        $own = $groups->pluck('price_list_id')->filter()->map(fn (mixed $id): int => (int) $id)->all();
+        $campaigns = PriceListPriceGroup::query()->whereIn('customer_price_group_id', $groupIds)->pluck('price_list_id')->map(fn (mixed $id): int => (int) $id)->all();
+        $allowed = array_values(array_unique([...$own, ...$campaigns]));
+
+        if ($listIds === []) {
+            // Without a choice an archived list (or campaign) is left out, not a reason to fail the run.
+            $allowed = $allowed === [] ? [] : array_values(array_map('intval', PriceList::query()->whereKey($allowed)->whereNull('archived_at')->pluck('id')->all()));
+
+            if ($allowed === []) {
+                throw ValidationException::withMessages(['price_group_ids' => __('Kundgrupperna har ingen prislista att uppdatera.')]);
+            }
+
+            return $allowed;
+        }
+
+        if (array_diff($listIds, $allowed) !== []) {
+            throw ValidationException::withMessages(['list_ids' => __('En vald prislista hör inte till kundgrupperna.')]);
+        }
+
+        return $listIds;
     }
 
     /** @param  array<string, mixed>  $validated */
@@ -235,6 +332,16 @@ class PlanPriceUpdate
             }
 
             return PriceUpdateRule::amount($minor);
+        }
+
+        if ($kind === PriceUpdateKind::Margin) {
+            $bp = PriceInput::percentToBasisPoints((string) ($validated['margin'] ?? ''));
+
+            if ($bp === null || $bp < 0 || $bp >= 10000) {
+                throw ValidationException::withMessages(['margin' => __('Skriv täckningsgraden i procent, till exempel 30. Den kan inte vara negativ och inte 100 % eller mer: vid 100 % skulle priset bli oändligt.')]);
+            }
+
+            return PriceUpdateRule::margin($bp);
         }
 
         if ($kind === PriceUpdateKind::Index) {
@@ -302,7 +409,8 @@ class PlanPriceUpdate
      */
     private function articleQuery(array $validated): Builder
     {
-        $query = Article::query()->where('is_active', true);
+        $query = Article::query()->where('is_active', true)
+            ->when(($validated['supplier_ids'] ?? []) !== [], fn (Builder $inner) => $inner->whereIn('default_supplier_id', array_map('intval', $validated['supplier_ids'])));
         $from = trim((string) ($validated['number_from'] ?? ''));
         $to = trim((string) ($validated['number_to'] ?? ''));
 
@@ -345,26 +453,31 @@ class PlanPriceUpdate
      * @param  Collection<int, PriceList>  $lists
      * @return list<array<string, mixed>>
      */
-    private function ruleLines(array $validated, PriceUpdateRule $rule, PriceRounding $rounding, CarbonImmutable $effective, bool $base, Collection $lists): array
+    private function ruleLines(Company $company, array $validated, PriceUpdateRule $rule, PriceRounding $rounding, CarbonImmutable $effective, bool $base, Collection $lists): array
     {
         $articles = $this->articleQuery($validated)
             ->orderBy('number')
-            ->get(['id', 'number', 'price_ore', 'purchase_price_ore', 'unit', 'stock_unit_id', 'sales_unit_id'])
+            ->get(['id', 'number', 'price_ore', 'purchase_price_ore', 'unit', 'stock_unit_id', 'sales_unit_id', 'vat_rate'])
             ->keyBy('id');
 
         $lines = [];
         $date = $effective->toDateString();
+        $margin = $rule->kind === PriceUpdateKind::Margin ? $this->marginBasis($company, $articles, $effective) : null;
 
         if ($base) {
             foreach ($articles as $article) {
                 $old = $article->price_ore->ore;
-                $lines[] = $this->computed($rule, $rounding, [
+                $line = [
                     'target' => PriceUpdateTarget::Base->value,
                     'article_id' => $article->id,
                     'old_minor' => $old,
-                    'cost_minor' => $this->cost($article, null, null),
+                    'cost_minor' => $margin === null ? $this->cost($article, null, null) : null,
                     'valid_from' => $date,
-                ]);
+                ];
+
+                $lines[] = $margin === null
+                    ? $this->computed($rule, $rounding, $line)
+                    : $this->marginLine($rule, $rounding, $line, $article, null, null, $margin);
             }
         }
 
@@ -405,18 +518,20 @@ class PlanPriceUpdate
                     'current_item_id' => $item->id,
                     'old_minor' => $item->price_minor,
                     'old_discount_bp' => $item->discount_bp,
-                    'cost_minor' => $this->cost($article, $list, $item->unit_id),
+                    'cost_minor' => $margin === null ? $this->cost($article, $list, $item->unit_id) : null,
                     'valid_from' => $date,
                     'valid_to' => $item->valid_to?->toDateString(),
                 ];
 
                 $lines[] = match (true) {
                     $item->discount_bp !== null => $this->refused($line, PriceUpdateRefusal::DiscountItem),
+                    $margin !== null && $list->currency !== 'SEK' => $this->refused($line, PriceUpdateRefusal::MarginOtherCurrency),
                     $rule->kind === PriceUpdateKind::Amount && $list->currency !== 'SEK' => $this->refused($line, PriceUpdateRefusal::OtherCurrency),
                     $item->valid_from !== null && $item->valid_from->toDateString() === $date => $this->refused($line, PriceUpdateRefusal::SameStart),
                     $byKey->get("{$list->id}|".$this->key($item->article_id, $item->unit_id, $item->min_quantity_milli), collect())
                         ->contains(fn (PriceListItem $other): bool => $other->id !== $item->id && $other->valid_from !== null && $other->valid_from->greaterThan($effectiveDay)
                             && ($item->valid_to === null || $other->valid_from->lessThanOrEqualTo($item->valid_to))) => $this->refused($line, PriceUpdateRefusal::FuturePriceExists),
+                    $margin !== null => $this->marginLine($rule, $rounding, $line, $article, $item->unit_id, $list, $margin),
                     default => $this->computed($rule, $rounding, $line),
                 };
             }
@@ -426,13 +541,100 @@ class PlanPriceUpdate
     }
 
     /**
+     * What a target margin needs besides the rule: the cost book of the
+     * articles (the same costing as the margin floor, ADR-082 §9) and the
+     * codes of the units, loaded once.
+     *
+     * @param  Collection<int, Article>  $articles
+     * @return array{book: ArticleCostBook, units: Collection<int, string>, floor_bp: ?int}
+     */
+    private function marginBasis(Company $company, Collection $articles, CarbonImmutable $effective): array
+    {
+        return [
+            'book' => ArticleCostBook::for($company, array_values($articles->keys()->map(fn (mixed $id): int => (int) $id)->all()), $effective),
+            'units' => Unit::query()->get(['id', 'code'])->pluck('code', 'id'),
+            'floor_bp' => PriceFloor::of($company)->minimumBp,
+        ];
+    }
+
+    /**
+     * A price from a target margin: the exact cost of one whole unit of the
+     * price (the list item's unit, or the article's sales unit) from the cost
+     * book, the net price that leaves at least the margin (rounded up once),
+     * then the gross price for a list including VAT (rounded up), then the
+     * run's rounding. A rounding rule can round down, so a line whose
+     * achieved margin ends below the target is flagged (`below_target:<bp>`),
+     * as is one below the company's lowest margin (`below_floor`); the price
+     * is never changed for it. An article without a cost (or with one of
+     * 0 kr), a unit that does not convert to its stock unit, or a cost too
+     * small to price in öre is refused with the reason.
+     *
+     * @param  array<string, mixed>  $line
+     * @param  array{book: ArticleCostBook, units: Collection<int, string>, floor_bp: ?int}  $margin
+     * @return array<string, mixed>
+     */
+    private function marginLine(PriceUpdateRule $rule, PriceRounding $rounding, array $line, Article $article, ?int $unitId, ?PriceList $list, array $margin): array
+    {
+        $unitCode = (string) ($unitId !== null
+            ? $margin['units']->get($unitId)
+            : ($margin['units']->get($article->sales_unit_id ?? $article->stock_unit_id ?? 0) ?? $article->unit));
+
+        if (! $margin['book']->hasCost($article->id)) {
+            return $this->refused($line, PriceUpdateRefusal::MissingCost);
+        }
+
+        $cost = $margin['book']->unitCostExact($article->id, $unitCode);
+
+        if ($cost === null) {
+            return $this->refused($line, PriceUpdateRefusal::UnitNotConvertible);
+        }
+
+        if ($cost->isNegativeOrZero()) {
+            return $this->refused($line, PriceUpdateRefusal::MissingCost);
+        }
+
+        $costOre = $cost->toScale(0, RoundingMode::Ceiling)->toInt();
+        $includesVat = $list instanceof PriceList && $list->prices_include_vat;
+        $vat = $includesVat ? (int) $article->vat_rate : null;
+        $unrounded = $rule->priceFromCost($cost, $vat);
+
+        if ($cost->toScale(0, RoundingMode::HalfUp)->isZero() || $rounding->apply($unrounded) === 0) {
+            return $this->refused([...$line, 'unrounded_minor' => $unrounded], PriceUpdateRefusal::CostTooSmall);
+        }
+
+        // Net lists compare with the cost directly; a gross price is not compared with a net cost.
+        $result = $this->computed($rule, $rounding, [...$line, 'cost_minor' => $includesVat ? null : $costOre], $unrounded);
+
+        if (! is_int($result['new_minor'] ?? null) || $result['status'] === PriceUpdateLineStatus::Refused->value) {
+            return $result;
+        }
+
+        $net = $vat === null ? $result['new_minor'] : DocumentPricing::consumerNet($result['new_minor'], $vat);
+        $flags = $result['flags'] ?? [];
+
+        // contribution / net < margin, exactly: net × (10 000 - margin) < cost × 10 000.
+        $below = fn (int $bp): bool => $net === 0 || BigRational::of($net)->multipliedBy(10000 - $bp)->isLessThan($cost->multipliedBy(10000));
+
+        if ($below((int) $rule->marginBp)) {
+            $achieved = $net === 0 ? 0 : BigRational::of($net)->minus($cost)->multipliedBy(10000)->dividedBy($net)->toScale(0, RoundingMode::Floor)->toInt();
+            $flags[] = "below_target:{$achieved}";
+        }
+
+        if ($margin['floor_bp'] !== null && $below($margin['floor_bp'])) {
+            $flags[] = 'below_floor';
+        }
+
+        return [...$result, 'flags' => $flags === [] ? null : $flags];
+    }
+
+    /**
      * @param  array<string, mixed>  $line
      * @return array<string, mixed>
      */
-    private function computed(PriceUpdateRule $rule, PriceRounding $rounding, array $line): array
+    private function computed(PriceUpdateRule $rule, PriceRounding $rounding, array $line, ?int $unroundedOverride = null): array
     {
         $old = (int) $line['old_minor'];
-        $unrounded = $rule->unrounded($old);
+        $unrounded = $unroundedOverride ?? $rule->unrounded($old);
 
         if ($unrounded < 0) {
             return $this->refused([...$line, 'unrounded_minor' => $unrounded], PriceUpdateRefusal::NegativePrice);

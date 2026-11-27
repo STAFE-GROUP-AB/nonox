@@ -31,6 +31,9 @@ enum PriceUpdateRefusal: string
     case FuturePriceExists = 'FUTURE_PRICE_EXISTS';
     case ChangedSince = 'CHANGED_SINCE';
     case ListArchived = 'LIST_ARCHIVED';
+    case MissingCost = 'MISSING_COST';
+    case MarginOtherCurrency = 'MARGIN_OTHER_CURRENCY';
+    case CostTooSmall = 'COST_TOO_SMALL';
 
     public function label(): string
     {
@@ -55,6 +58,9 @@ enum PriceUpdateRefusal: string
             self::FuturePriceExists => __('Det finns redan ett kommande pris. Ändra det i listan i stället.'),
             self::ChangedSince => __('Priset har ändrats sedan uppdateringen planerades. Gör en ny uppdatering för det.'),
             self::ListArchived => __('Listan är arkiverad.'),
+            self::MissingCost => __('Artikeln saknar inköpspris, så priset kan inte räknas från en täckningsgrad. Lägg in inköpspriset först.'),
+            self::CostTooSmall => __('Inköpspriset per enhet är så litet att det inte går att sätta ett pris i hela ören från det. Sätt priset för hand.'),
+            self::MarginOtherCurrency => __('Täckningsgraden räknas på inköpspriset i kronor och ändrar inte priser i en annan valuta.'),
         };
     }
 }

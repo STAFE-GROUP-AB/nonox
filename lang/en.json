@@ -15168,5 +15168,21 @@
     "Förklaring av priset (JSON)": "Price explanation (JSON)",
     "À-pris i fakturans valuta": "Unit price in the invoice currency",
     "Inga offerter eller ordrar att visa på den här sidan": "No quotes or orders to show on this page",
-    "Fler offerter och ordrar finns på andra sidor.": "More quotes and orders are on other pages."
+    "Fler offerter och ordrar finns på andra sidor.": "More quotes and orders are on other pages.",
+    "Du får inte se inköpspriser, och en täckningsgrad räknas på dem.": "You may not see purchase prices, and a margin is worked out from them.",
+    "Någon av leverantörerna finns inte.": "One of the suppliers does not exist.",
+    "Någon av kundgrupperna finns inte.": "One of the customer groups does not exist.",
+    "En arkiverad kundgrupp kan inte väljas.": "An archived customer group cannot be chosen.",
+    "Grundpriserna tillhör ingen kundgrupp. Ta bort kundgruppen, eller välj bara prislistor.": "Base prices belong to no customer group. Remove the customer group, or choose price lists only.",
+    "Kundgrupperna har ingen prislista att uppdatera.": "The customer groups have no price list to update.",
+    "En vald prislista hör inte till kundgrupperna.": "A chosen price list does not belong to the customer groups.",
+    "Skriv täckningsgraden i procent, till exempel 30. Den kan inte vara negativ och inte 100 % eller mer: vid 100 % skulle priset bli oändligt.": "Write the contribution margin in percent, for example 30. It cannot be negative or 100 % or more: at 100 % the price would be infinite.",
+    "Artikeln saknar inköpspris, så priset kan inte räknas från en täckningsgrad. Lägg in inköpspriset först.": "The article has no purchase price, so the price cannot be worked out from a margin. Enter the purchase price first.",
+    "Täckningsgraden räknas på inköpspriset i kronor och ändrar inte priser i en annan valuta.": "The margin is worked out from the purchase price in kronor and does not change prices in another currency.",
+    "Mål för täckningsgrad": "Target contribution margin",
+    "Bara artiklar vars standardleverantör är den valda.": "Only articles whose default supplier is the chosen one.",
+    "Begränsar uppdateringen till kundgruppens prislista och kampanjer riktade till den. Gäller inte grundpriserna.": "Limits the update to the customer group's price list and the campaigns aimed at it. Does not apply to base prices.",
+    "Alla kundgrupper": "All customer groups",
+    "Önskad täckningsgrad i procent": "Wanted contribution margin in percent",
+    "30 ger ett pris där 30 % av priset exklusive moms blir kvar efter inköpspriset. Samma beräkning som lägsta täckningsgrad. Artiklar utan inköpspris hoppas över och visas i förhandsgranskningen.": "30 gives a price where 30 % of the price excluding VAT is left after the purchase price. Same calculation as the lowest contribution margin. Articles without a purchase price are skipped and shown in the preview."
 }
