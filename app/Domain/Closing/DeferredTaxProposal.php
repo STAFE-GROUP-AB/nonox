@@ -7,6 +7,7 @@ namespace App\Domain\Closing;
 use App\Domain\Accounting\LedgerBalances;
 use App\Domain\Accounting\VoucherSource;
 use App\Domain\Accounting\VoucherStatus;
+use App\Domain\AnnualReport\AnnualAccounts;
 use App\Domain\AnnualReport\K3Rules;
 use App\Domain\Closing\DeferredTax\BuildingCarryingAmounts;
 use App\Domain\Company\ReportingFramework;
@@ -14,7 +15,7 @@ use App\Models\Account;
 use App\Models\Company;
 use App\Models\DeferredTaxItem;
 use App\Models\FiscalYear;
-use App\Models\VoucherRow;
+use App\Models\Voucher;
 use App\Support\Money\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -232,13 +233,14 @@ final class DeferredTaxProposal
             return [];
         }
 
-        return VoucherRow::query()
-            ->join('vouchers', 'vouchers.id', '=', 'voucher_rows.voucher_id')
+        return Voucher::query()
+            ->joinLateral(AnnualAccounts::voucherAccountRows('SUM(voucher_rows.debit_ore - voucher_rows.credit_ore) FILTER (WHERE voucher_rows.company_id = vouchers.company_id) AS movement'), 'voucher_account_rows')
             ->where('vouchers.fiscal_year_id', $fiscalYear->id)
             ->where('vouchers.status', VoucherStatus::Posted->value)
             ->whereIn('vouchers.id', $chain)
-            ->groupBy('voucher_rows.account_id')
-            ->selectRaw('voucher_rows.account_id, SUM(voucher_rows.debit_ore - voucher_rows.credit_ore) AS movement')
+            ->groupBy('voucher_account_rows.account_id')
+            ->selectRaw('voucher_account_rows.account_id, SUM(voucher_account_rows.movement) AS movement')
+            ->toBase()
             ->pluck('movement', 'account_id')
             ->map(fn (mixed $movement): int => (int) $movement)
             ->all();
