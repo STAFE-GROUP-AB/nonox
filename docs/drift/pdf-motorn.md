@@ -2,12 +2,12 @@
 
 För den som driftar NONOX-tjänsten. Beslut: [ADR-046, tillägg 2026-11-18](../adr/ADR-046-crm-signing.md) (gap 5, ägarbeslut 3, 4 och 22, paket S5). Tekniken: [tools/pdf-engine/README.md](../../tools/pdf-engine/README.md). Stegen för den som kör NONOX själv: [NONOX i egen drift](../juridik/egen-drift.md#pdf-motorn-för-signering-valfri).
 
-> **Inget i den här filen är gjort på servern.** Varje steg som installerar något eller ändrar servern är märkt **Kräver ägarens godkännande** och görs först när ägaren har sagt ja till just det steget. Regeln att aldrig köra `composer` eller `npm` på en server gäller också `pip`: ägaren väljer ett av alternativen i steg 2 nedan.
+> **Gjort på nonox.app 2026-11-28** på ägarens uppdrag ("sätt detta själv och lös allt bara"): steg 1–5 nedan, sandlådan med bubblewrap (steg 1–4 i avsnittet om sandlådan, med AppArmor-profilen) och lösenord på Redis. `signing:engine-doctor` gav "Sandlåda: på (bubblewrap)" och "OK: PDF-motorn fungerar", med alla självtester gröna. Steg 2 gjordes med alternativ (a), pip på servern med kontrollsummor, efter ägarens uttryckliga ja; regeln att inte köra `composer`, `npm` eller `pip` på servern gäller fortfarande för allt annat. Försegling, långtidsvalidering och kontrollsidan är fortfarande avstängda tills juristfrågan om eIDAS är besvarad (ADR-046).
 
 ## Läge i dag
 
-- Motorn ingår i koden från paket S5 men är **inte installerad** på den driftade tjänsten. Med standardvärdet `NONOX_PDF_ENGINE=auto` och ingen Python-miljö väljer NONOX `NullPdfEngine`: signering fungerar som förut, och skärmarna för fält och försegling (S6, S10) säger "Kräver PDF-motorn".
-- Ingenting i S5 använder motorn i ett kundflöde ännu. S6 (fält) och S10 (försegling) gör det, och S10–S12 slås inte på för den driftade tjänsten förrän frågan om betrodda tjänster i gap 5 är besvarad.
+- Motorn är installerad på den driftade tjänsten: Python-miljön i `/home/forge/nonox-pdf-engine/venv` (Python 3.12.3, pyHanko 0.38.1, pypdfium2 5.14.0), typsnitten i `/home/forge/nonox-pdf-engine/fonts`, och den körs i bubblewrap. En kopia av `.env` före ändringen ligger bredvid filen (`.env.bak-20261128-pdf-engine`).
+- Fält och stämplar (S6) kan användas. Försegling (S10–S12) slås inte på i den driftade tjänsten förrän frågan om betrodda tjänster i gap 5 är besvarad.
 
 ## Steg för att slå på motorn
 
@@ -57,4 +57,24 @@ Motorn kan startas i bubblewrap (`bwrap`, Linux). Den ser då bara systembibliot
 3. Kör `php artisan signing:engine-doctor`. Raden "Sandlåda: på (bubblewrap)" och "OK: PDF-motorn fungerar" ska stå där; HQ > Integrationer visar samma sak. Är bubblewrap påslaget men saknas eller startar inte, räknas motorn som icke fungerande. NONOX kör aldrig motorn utan sandlåda när den är påslagen.
 4. **Kräv sandlådan för försegling:** `NONOX_PDF_ENGINE_REQUIRE_SANDBOX=true`. Då går det inte att slå på försegling i HQ om motorn inte körs i sandlådan, och försegling och långtidsvalidering görs inte alls om `NONOX_PDF_ENGINE_SANDBOX` inte är `bwrap`; en väntande försegling avbryts då med orsaken "PDF-motorn körs inte i en sandlåda". Är sandlådan påslagen men bubblewrap fungerar inte, behandlas det som ett motorfel. Den driftade tjänsten ska ha detta på innan försegling slås på.
 
-**Ubuntu 24.04 och senare** kan begränsa vanliga användares användarnamnrymder via AppArmor, så att `bwrap` inte startar; ett typiskt fel är "setting up uid map: Permission denied" (ej verifierat här). Då är det ägarens beslut hur det löses: antingen en AppArmor-profil som tillåter `bwrap`, eller att ändra systeminställningen `kernel.apparmor_restrict_unprivileged_userns`. TODO(verify): exakt profil och kommandon ska provas på den aktuella servern innan de skrivs in här; ändra inte säkerhetsinställningen för hela servern utan ett uttryckligt beslut.
+**Ubuntu 24.04 och senare** begränsar vanliga användares användarnamnrymder via AppArmor (`kernel.apparmor_restrict_unprivileged_userns=1`), så att `bwrap` inte startar. På nonox.app var felet "loopback: Failed RTM_NEWADDR". Lösningen som används där (provad 2026-11-28) är en AppArmor-profil bara för `bwrap`; systeminställningen för hela servern är orörd:
+
+```bash
+sudo tee /etc/apparmor.d/bwrap >/dev/null <<'PROFILE'
+abi <abi/4.0>,
+include <tunables/global>
+
+profile bwrap /usr/bin/bwrap flags=(unconfined) {
+  userns,
+  include if exists <local/bwrap>
+}
+PROFILE
+sudo apparmor_parser -r /etc/apparmor.d/bwrap
+bwrap --ro-bind / / --unshare-all true && echo OK
+```
+
+Ångra: `sudo apparmor_parser -R /etc/apparmor.d/bwrap` och ta bort filen.
+
+**Python 3.12 (Ubuntu 24.04)** behöver `typing-extensions` för aiohttp; låsfilen har den sedan 2026-11-28 med villkoret `python_version < "3.13"`. Utan den vägrade `pip install --require-hashes` att installera. Paketet `python3.12-venv` måste finnas för att `python3 -m venv` ska fungera.
+
+**Redis kräver lösenord** på nonox.app sedan 2026-11-28 (`requirepass` i `/etc/redis/redis.conf`, samma värde som `REDIS_PASSWORD` i `.env`). Redis delas med andra sajter på samma server; alla deras `.env` fick samma lösenord samtidigt, och kopior före ändringen heter `.env.bak-20261128-redis`. Byts lösenordet måste alla sajterna byta samtidigt, följt av `config:cache` där konfigurationen är cachad och omstart av köarbetarna.

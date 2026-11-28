@@ -127,6 +127,7 @@ release younger than two weeks was chosen.
 | propcache | 0.5.4 | Apache-2.0 | aiohttp |
 | yarl | 1.25.1 | Apache-2.0 | aiohttp |
 | idna | 3.20 | BSD-3-Clause | yarl |
+| typing-extensions | 4.16.0 | PSF-2.0 | aiohttp, on Python 3.12 and older only (Ubuntu 24.04 ships 3.12) |
 | certifi | 2026.10.23 | MPL-2.0 | Mozilla's CA bundle for HTTPS to timestamp servers |
 | fonttools | 4.68.0 | MIT | Font subsetting (pyHanko `opentype` extra) |
 | uharfbuzz | 0.57.0 | Apache-2.0 | Text shaping (pyHanko `opentype` extra) |
