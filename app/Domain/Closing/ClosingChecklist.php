@@ -9,6 +9,7 @@ use App\Domain\Accounting\LedgerBalances;
 use App\Domain\Accounting\StaleOpeningBalances;
 use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Accruals\AccrualPlan;
+use App\Domain\AnnualReport\AnnualAccounts;
 use App\Domain\Company\AccountingMethod;
 use App\Domain\Projects\ProjectWip;
 use App\Domain\Vat\VatPeriods;
@@ -22,7 +23,6 @@ use App\Models\FiscalYear;
 use App\Models\FixedAsset;
 use App\Models\VatReport;
 use App\Models\Voucher;
-use App\Models\VoucherRow;
 use App\Models\YearEndEntry;
 use App\Modules\Inventory\InventoryModule;
 use App\Modules\Inventory\Models\StockValuation;
@@ -223,9 +223,9 @@ final class ClosingChecklist
     {
         $accounts = Account::query()->whereBetween('number', [BankReconciliations::FIRST_ACCOUNT, BankReconciliations::LAST_ACCOUNT])->get(['id', 'number']);
         $opening = LedgerBalances::opening($fiscalYear);
-        $moved = VoucherRow::query()->join('vouchers', 'vouchers.id', '=', 'voucher_rows.voucher_id')
+        $moved = Voucher::query()->joinLateral(AnnualAccounts::voucherAccountRows('COUNT(*) AS movements'), 'voucher_account_rows')
             ->where('vouchers.fiscal_year_id', $fiscalYear->id)->where('vouchers.status', VoucherStatus::Posted->value)
-            ->whereIn('voucher_rows.account_id', $accounts->modelKeys())->distinct()->pluck('voucher_rows.account_id')->map(fn (mixed $id): int => (int) $id)->all();
+            ->whereIn('voucher_account_rows.account_id', $accounts->modelKeys())->distinct()->toBase()->pluck('voucher_account_rows.account_id')->map(fn (mixed $id): int => (int) $id)->all();
         $used = $accounts->filter(fn (Account $account): bool => in_array($account->id, $moved, true) || (int) ($opening[$account->id] ?? 0) !== 0);
         $reconciled = BankReconciliation::query()->whereIn('account_id', $used->modelKeys())->whereDate('statement_date', $fiscalYear->end_date->toDateString())
             ->orderByDesc('id')->get()->unique('account_id')->filter(fn (BankReconciliation $reconciliation): bool => $reconciliation->isBalanced())->pluck('account_id')->all();

@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace App\Domain\Closing;
 
 use App\Domain\Accounting\VoucherStatus;
+use App\Domain\AnnualReport\AnnualAccounts;
 use App\Domain\Invoicing\InvoiceBooking;
 use App\Domain\Payables\SupplierInvoiceBooking;
-use App\Models\VoucherRow;
+use App\Models\Voucher;
 use Carbon\CarbonImmutable;
-use Illuminate\Support\Facades\DB;
 
 /**
  * The customer or supplier ledger (kundreskontra, leverantörsreskontra) on
@@ -53,13 +53,15 @@ final class LedgerReconciliation
         }
 
         $account = $customers ? InvoiceBooking::RECEIVABLES : SupplierInvoiceBooking::PAYABLES;
-        $balance = (int) VoucherRow::query()
-            ->join('vouchers', 'vouchers.id', '=', 'voucher_rows.voucher_id')
-            ->join('accounts', 'accounts.id', '=', 'voucher_rows.account_id')
+        // The rows are read voucher by voucher (S1-P14, see AnnualAccounts::voucherAccountRows()).
+        $balance = (int) Voucher::query()
+            ->joinLateral(AnnualAccounts::voucherAccountRows('SUM(voucher_rows.debit_ore - voucher_rows.credit_ore) FILTER (WHERE voucher_rows.company_id = vouchers.company_id) AS movement'), 'voucher_account_rows')
+            ->join('accounts', fn ($join) => $join->on('accounts.id', '=', 'voucher_account_rows.account_id')->on('accounts.company_id', '=', 'vouchers.company_id'))
             ->where('vouchers.status', VoucherStatus::Posted->value)
             ->whereDate('vouchers.voucher_date', '<=', $day->toDateString())
             ->where('accounts.number', $account)
-            ->sum(DB::raw('voucher_rows.debit_ore - voucher_rows.credit_ore'));
+            ->toBase()
+            ->sum('voucher_account_rows.movement');
         // A liability is shown as a positive amount, like the ledger.
         $balance = $customers ? $balance : -$balance;
         $ledger = array_sum(array_column($items, 'open'));

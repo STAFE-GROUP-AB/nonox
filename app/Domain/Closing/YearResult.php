@@ -6,8 +6,9 @@ namespace App\Domain\Closing;
 
 use App\Domain\Accounting\AccountType;
 use App\Domain\Accounting\VoucherStatus;
+use App\Domain\AnnualReport\AnnualAccounts;
 use App\Models\FiscalYear;
-use App\Models\VoucherRow;
+use App\Models\Voucher;
 
 /**
  * The year's result from the posted ledger, in signed öre (debit positive,
@@ -25,14 +26,15 @@ final readonly class YearResult
 
     public static function of(FiscalYear $fiscalYear): self
     {
-        $sums = VoucherRow::query()
-            ->join('vouchers', 'vouchers.id', '=', 'voucher_rows.voucher_id')
-            ->join('accounts', 'accounts.id', '=', 'voucher_rows.account_id')
+        $sums = Voucher::query()
+            ->joinLateral(AnnualAccounts::voucherAccountRows('SUM(voucher_rows.debit_ore - voucher_rows.credit_ore) FILTER (WHERE voucher_rows.company_id = vouchers.company_id) AS movement'), 'voucher_account_rows')
+            ->join('accounts', fn ($join) => $join->on('accounts.id', '=', 'voucher_account_rows.account_id')->on('accounts.company_id', '=', 'vouchers.company_id'))
             ->where('vouchers.fiscal_year_id', $fiscalYear->id)
             ->where('vouchers.status', VoucherStatus::Posted->value)
             ->whereIn('accounts.type', [AccountType::Revenue->value, AccountType::Expense->value])
-            ->selectRaw('CASE WHEN accounts.number = ? THEN 2 WHEN accounts.number BETWEEN 8900 AND 8989 THEN 1 ELSE 0 END AS part, SUM(voucher_rows.debit_ore - voucher_rows.credit_ore) AS amount', [ClosingAccounts::YEAR_RESULT])
+            ->selectRaw('CASE WHEN accounts.number = ? THEN 2 WHEN accounts.number BETWEEN 8900 AND 8989 THEN 1 ELSE 0 END AS part, SUM(voucher_account_rows.movement) AS amount', [ClosingAccounts::YEAR_RESULT])
             ->groupByRaw('1')
+            ->toBase()
             ->pluck('amount', 'part')
             ->map(fn (mixed $amount): int => (int) $amount);
 
